@@ -1,0 +1,133 @@
+---
+- name: reset | kubeadm reset
+  command: kubeadm reset
+  failed_when: false
+  tags:
+    - kubeadm
+
+- name: reset | stop services
+  service:
+    name: "{{ item }}"
+    state: stopped
+  with_items:
+    - kubelet
+    - etcd
+  failed_when: false
+  tags:
+    - services
+
+- name: reset | disable services
+  service:
+    name: "{{ item }}"
+    enabled: no
+  with_items:
+    - kubelet
+    - etcd
+  failed_when: false
+  tags:
+    - services
+
+- name: reset | uninstall package
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - kubeadm
+    - kubectl
+    - kubelt
+    - kubernetes-cni
+
+- name: reset | remove services
+  file:
+    path: "/etc/systemd/system/{{ item }}.service"
+    state: absent
+  with_items:
+    - kubelet
+    - etcd
+  tags:
+    - services
+
+- name: reset | systemctl daemon-reload
+  command: systemctl daemon-reload
+
+- name: reset | systemctl reset-failed
+  command: systemctl reset-failed
+
+- name: reset | remove all containers
+  shell: "docker ps -aq | xargs -r docker rm -fv"
+  register: remove_all_containers
+  retries: 4
+  until: remove_all_containers.rc == 0
+  delay: 5
+  tags:
+    - docker
+
+- name: reset | restart docker
+  service:
+    name: docker
+    state: restarted
+  tags:
+    - docker
+
+- name: reset | gather mounted kubelet dirs
+  shell: mount | grep /var/lib/kubelet | awk '{print $3}' | tac
+  check_mode: no
+  register: mounted_dirs
+  tags:
+    - mounts
+
+- name: reset | unmount kubelet dirs
+  command: umount {{item}}
+  with_items: '{{ mounted_dirs.stdout_lines }}'
+  tags:
+    - mounts
+
+- name: flush iptables
+  iptables:
+    flush: yes
+  tags:
+    - iptables
+
+- name: reset | delete some files and directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - /etc/kubernetes
+    - /etc/systemd/system/kubelet.service.d
+    - /etc/yum.repos.d/k8s.repo
+    - /var/lib/kubelet
+    - /root/.kube
+    - /var/lib/etcd
+    - /etc/ssl/etcd
+    - /etc/etcd.env
+    - /etc/cni
+    - /etc/nginx
+    - /opt/cni
+    - /var/log/pods
+    - "/usr/local/bin/etcd"
+    - "/usr/local/bin/etcdctl"
+    - /usr/local/bin/cfssl
+    - /usr/local/bin/cfssljson
+    - /usr/local/bin/cfssl-certinfo
+    - /run/xtables.lock
+    - /run/flannel
+    - /run/kubernetes
+  tags:
+    - files
+
+- name: reset | remove host entries from /etc/hosts
+  blockinfile:
+    dest: "/etc/hosts"
+    state: absent
+    follow: yes
+    marker: "# Ansible inventory hosts {mark}"
+  tags:
+    - dns
+
+- name: reset | Restart network
+  service:
+    name: network
+    state: restarted
+  tags:
+    - network

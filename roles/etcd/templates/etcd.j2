@@ -1,0 +1,19 @@
+#!/bin/bash
+docker run \
+  --restart=on-failure:5 \
+  --env-file=/etc/etcd.env \
+  --net=host \
+  -v /etc/ssl/certs:/etc/ssl/certs:ro \
+  -v /etc/ssl/etcd/ssl:/etc/ssl/etcd/ssl:ro \
+  -v /var/lib/etcd:/var/lib/etcd:rw \
+  {% if etcd_memory_limit is defined %}
+  --memory={{ etcd_memory_limit|regex_replace('Mi', 'M') }} \
+  {% endif %}
+  --oom-kill-disable \
+  {% if etcd_blkio_weight is defined %}
+  --blkio-weight={{ etcd_blkio_weight }} \
+  {% endif %}
+  --name={{ etcd_member_name | default("etcd") }} \
+  {{ etcd_image_repo }}:{{ etcd_image_tag }} \
+  /usr/local/bin/etcd \
+  "$@"

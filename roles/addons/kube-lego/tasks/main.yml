@@ -1,0 +1,44 @@
+---
+
+- name: Kube lego | create kube-lego config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  when: inventory_hostname == groups['kube-master'][0] and kube_lego_enable | default(true)
+  tags:
+    - kube-lego
+  with_items:
+    - "/etc/kubernetes/addons"
+    - "/etc/kubernetes/addons/kube-lego"
+
+- name: Kube lego | Ensure ingress-nginx deploy file
+  template:
+    src: "{{ item }}"
+    dest: "/etc/kubernetes/addons/kube-lego/{{ item }}"
+    mode: 0755
+  when: inventory_hostname == groups['kube-master'][0] and kube_lego_enable | default(true)
+  with_items:
+    - "deployment.yml"
+    - "role.yml"
+    - "rolebinding.yml"
+    - "serviceaccount.yml"
+
+# - name: Kube lego | 创建namespace kube-lego
+#   kubernetes:
+#     api_endpoint: 127.0.0.1:8080
+#     insecure: true
+#     inline_data:
+#       kind: Namespace
+#       apiVersion: v1
+#       metadata:
+#         name: kube-lego
+#     state: present
+#   ignore_errors: true
+#   when: inventory_hostname == groups['kube-master'][0] and kube_lego_enable | default(true)
+
+- name: Kube lego | Start kube-lego
+  command: kubectl apply -f /etc/kubernetes/addons/kube-lego -n kube-system
+  delegate_to: "{{ groups['kube-master']|first }}"
+  when: inventory_hostname == groups['kube-master'][0] and kube_lego_enable | default(true)
+

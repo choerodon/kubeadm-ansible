@@ -1,0 +1,30 @@
+---
+- name: Stop if ansible version is too low
+  assert:
+    that:
+      - ansible_version.full|version_compare('2.3.0', '>=')
+  run_once: yes
+
+- name: Stop if non systemd OS type
+  assert:
+    that: ansible_service_mgr == "systemd"
+  ignore_errors: "false"
+
+- name: Stop if unknown OS
+  assert:
+    that: ansible_distribution in [ 'CentOS','RedHat']
+  ignore_errors: "false"
+
+- name: Stop if memory is too small for masters
+  assert:
+    that: ansible_memtotal_mb >= 1500
+  ignore_errors: "false"
+  when: inventory_hostname in groups['kube-master']
+
+
+- name: Stop if memory is too small for nodes
+  assert:
+    that: ansible_memtotal_mb >= 1024
+  ignore_errors: "false"
+  when: inventory_hostname in groups['kube-node']
+

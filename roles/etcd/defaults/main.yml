@@ -1,0 +1,33 @@
+---
+
+is_etcd_master: "{{ inventory_hostname in groups['etcd'] }}"
+
+etcd_memory_limit: "{% if ansible_memtotal_mb < 4096 %}512M{% else %}0{% endif %}"
+
+
+etcd_blkio_weight: 1000
+
+etcd_member_name: |-
+  {% for host in groups['etcd'] %}
+  {%   if inventory_hostname == host %}{{"etcd"+loop.index|string }}{% endif %}
+  {% endfor %}
+
+etcd_access_address: "{% if k8s_interface is defined %}{{hostvars[inventory_hostname]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[inventory_hostname]['ip']|default(hostvars[inventory_hostname]['ansible_default_ipv4']['address'])}}{% endif %}"
+
+etcd_peer_url: "https://{{ etcd_access_address }}:2380"
+
+etcd_client_url: "https://{{ etcd_access_address }}:2379"
+
+etcd_peer_addresses: |-
+  {% for item in groups['etcd'] -%}
+    {{ "etcd"+loop.index|string }}=https://{% if k8s_interface is defined %}{{hostvars[item]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[item]['ip']|default(hostvars[item]['ansible_default_ipv4']['address'])}}{% endif %}:2380{% if not loop.last %},{% endif %}
+  {%- endfor %}
+
+etcd_access_addresses: |-
+  {% for item in groups['etcd'] -%}
+  {% if k8s_interface is defined %}
+  https://{{ hostvars[item]['ansible_'+k8s_interface].ipv4.address}}:2379{% if not loop.last %},{% endif %}
+  {% else %}
+  https://{{ hostvars[item]['ip'] | default(hostvars[item]['access_ip'] | default(hostvars[item]['ansible_default_ipv4']['address'])) }}:2379{% if not loop.last %},{% endif %}
+  {% endif %}
+  {%- endfor %}

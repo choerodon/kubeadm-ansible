@@ -1,0 +1,7 @@
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: NodeConfiguration
+nodeName: {{inventory_hostname}}
+caCertPath: /etc/kubernetes/pki/ca.crt
+token: {{ kubeadm_token }}
+discoveryTokenAPIServers:
+- {{ first_kube_master_endpoint | replace("https://", "")}}

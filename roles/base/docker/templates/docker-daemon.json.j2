@@ -1,0 +1,11 @@
+{
+    "exec-opts": ["native.cgroupdriver=systemd"],
+    "storage-driver": "overlay",
+    "log-driver": "json-file",
+{% if insecure_registries is defined %}
+    "insecure-registries": [{% for registry in insecure_registries %}"{{ registry }}"{% if not loop.last %},{% endif %}{% endfor %}],
+{% endif %}
+    "log-opts": {
+      "max-size": "10m"
+    }
+}

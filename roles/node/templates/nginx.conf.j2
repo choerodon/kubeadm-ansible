@@ -1,0 +1,26 @@
+error_log stderr notice;
+
+worker_processes auto;
+events {
+  multi_accept on;
+  use epoll;
+  worker_connections 1024;
+}
+
+stream {
+        upstream kube_apiserver {
+            least_conn;
+            {% for host in groups['kube-master'] -%}
+            server {% if k8s_interface is defined %}{{hostvars[host]['ansible_'+k8s_interface].ipv4.address}}{%- else %}{{hostvars[host]['ip']|default(hostvars[host]['ansible_default_ipv4']['address'])}}{%- endif %}:{{ kube_apiserver_port }};
+            {% endfor %}
+        }
+        
+        server {
+            listen        127.0.0.1:6443;
+            proxy_pass    kube_apiserver;
+            proxy_timeout 10m;
+            proxy_connect_timeout 1s;
+
+        }
+
+}

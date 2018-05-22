@@ -1,0 +1,16 @@
+# 默认参数定义在roles/base/variables/default/main.yml,如果要修改,可在本文件中覆盖
+
+# 暂时只支持v1.7.0、v1.8.1、v1.8.5
+kube_version: "v1.8.5"
+
+# 请指定iPv4网卡名称
+k8s_interface: "enp0s8"
+
+# pod的ip范围
+kube_pods_subnet: 10.233.64.0/18
+
+# service的ip范围
+kube_service_addresses: 10.233.0.0/18
+
+# kube-lego组件邮箱
+kube_lego_email: example@choerodon.io

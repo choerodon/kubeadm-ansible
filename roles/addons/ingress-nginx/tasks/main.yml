@@ -1,0 +1,35 @@
+---
+
+- name: Ingress nginx | create ingress-nginx config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  when: inventory_hostname == groups['kube-master'][0] and ingress_nginx_enable | default(true)
+  tags:
+    - addons
+  with_items:
+    - "/etc/kubernetes/addons"
+    - "/etc/kubernetes/addons/ingress-nginx"
+
+- name: Ingress nginx | Ensure ingress-nginx deploy file
+  template:
+    src: "{{ item }}"
+    dest: "/etc/kubernetes/addons/ingress-nginx/{{ item }}"
+    mode: 0755
+  register: ingress-nginx-deploy
+  when: inventory_hostname == groups['kube-master'][0] and ingress_nginx_enable | default(true)
+  with_items:
+    - "configmap.yml"
+    - "default-backend.yml"
+    - "rbac.yml"
+    - "tcp-services-configmap.yml"
+    - "udp-services-configmap.yml"
+    - "with-rbac.yml"
+    - "nginx-ingress-svc.yml"
+
+- name:  Start ingress controller
+  command: kubectl apply -f /etc/kubernetes/addons/ingress-nginx -n kube-system
+  delegate_to: "{{ groups['kube-master']|first }}"
+  when: inventory_hostname == groups['kube-master'][0] and ingress_nginx_enable | default(true)
+

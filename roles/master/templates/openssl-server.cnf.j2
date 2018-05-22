@@ -1,0 +1,24 @@
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage=serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = kubernetes
+DNS.2 = kubernetes.default
+DNS.3 = kubernetes.default.svc
+DNS.4 = kubernetes.default.svc.{{dns_domain}}
+DNS.5 = localhost
+{% for host in groups['kube-master'] %}
+DNS.{{ 5 + loop.index }} = {{ host }}
+{% endfor %}
+{% for host in groups['kube-master'] %}
+IP.{{ loop.index }} = {% if k8s_interface is defined %}{{ hostvars[host]['ansible_'+k8s_interface].ipv4.address }}{% else %}{{ hostvars[host]['ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}{% endif %} 
+{% endfor %}
+{% set idx =  groups['kube-master'] | length | int * 1 + 1 %}
+IP.{{ idx }} = {{ kube_apiserver_ip }} 
+IP.{{ idx + 1 }} = 127.0.0.1

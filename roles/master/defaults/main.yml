@@ -1,0 +1,49 @@
+---
+
+authorization_modes: ['Node', 'RBAC']
+# change to 0.0.0.0 to enable insecure access from anywhere (not recommended)
+kube_apiserver_insecure_bind_address: 127.0.0.1
+
+# A port range to reserve for services with NodePort visibility.
+# Inclusive at both ends of the range.
+kube_apiserver_node_port_range: "30000-32767"
+
+# ETCD backend for k8s data
+kube_apiserver_storage_backend: etcd3
+
+kube_apiserver_insecure_port: 8080
+
+kube_apiserver_insecure_endpoint: >-
+  http://{{ kube_apiserver_insecure_bind_address | regex_replace('0\.0\.0\.0','127.0.0.1') }}:{{ kube_apiserver_insecure_port }}
+
+
+# Admission control plug-ins
+kube_apiserver_admission_control:
+  - Initializers
+  - NamespaceLifecycle
+  - LimitRanger
+  - ServiceAccount
+  - DefaultStorageClass
+  - GenericAdmissionWebhook
+  - ResourceQuota
+
+kube_apiserver_count: "{{ groups['kube-master'] | length }}"
+
+# extra runtime config
+kube_api_runtime_config:
+  - admissionregistration.k8s.io/v1alpha1
+
+# Enable kubeadm deployment (experimental)
+
+# kubeadm settings
+# Value of 0 means it never expires
+kubeadm_token_ttl: 0
+
+etcd_access_addresses: |-
+  {% for item in groups['etcd'] -%}
+  {% if k8s_interface is defined %}
+  https://{{ hostvars[item]['ansible_'+k8s_interface].ipv4.address}}:2379{% if not loop.last %},{% endif %}
+  {% else %}
+  https://{{ hostvars[item]['ip'] | default(hostvars[item]['access_ip'] | default(hostvars[item]['ansible_default_ipv4']['address'])) }}:2379{% if not loop.last %},{% endif %}
+  {% endif %}
+  {%- endfor %}

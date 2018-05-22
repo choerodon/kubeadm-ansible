@@ -1,0 +1,42 @@
+---
+
+- hosts: kube-master:kube-node:etcd
+  any_errors_fatal: "true"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: base/prepare, tags: prepare }
+    - { role: base/docker, tags: docker }
+
+- hosts: etcd
+  any_errors_fatal: "true"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: etcd, tags: etcd }
+
+- hosts: kube-master:kube-node
+  any_errors_fatal: "true"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: base/install, tags: install }
+
+- hosts: kube-master
+  any_errors_fatal: "true"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: master, tags: master }
+
+- hosts: kube-node
+  any_errors_fatal: "true"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: node, tags: node }
+
+- hosts: kube-master
+  any_errors_fatal: "true"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: addons/flannel, tags: flannel }
+    - { role: addons/ingress-nginx, tags: ingress-nginx }
+    - { role: addons/dashboard, tags: dashboard }
+    - { role: addons/heapster, tags: heapster }
+    - { role: addons/kube-lego, tags: kube-lego }

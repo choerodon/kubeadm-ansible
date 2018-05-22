@@ -1,0 +1,28 @@
+---
+- name: restart etcd
+  command: /bin/true
+  notify:
+    - etcd | reload systemd
+    - reload etcd
+    - wait for etcd up
+
+- name: etcd | reload systemd
+  command: systemctl daemon-reload
+
+- name: reload etcd
+  service:
+    name: etcd
+    state: restarted
+  when: is_etcd_master
+
+- name: wait for etcd up
+  uri:
+    method: "GET"
+    url: "https://{% if is_etcd_master %}{{ etcd_access_address }}{% else %}127.0.0.1{% endif %}:2379/health"
+    validate_certs: no
+    client_cert: "/etc/ssl/etcd/ssl/client.pem"
+    client_key: "/etc/ssl/etcd/ssl/client-key.pem"
+  register: result
+  until: result.status is defined and result.status == 200
+  retries: 10
+  delay: 5

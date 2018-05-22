@@ -1,0 +1,76 @@
+---
+- include: verify-settings.yml
+  tags:
+    - asserts
+
+- name: Assign inventory name to hostnames
+  hostname:
+    name: "{{inventory_hostname}}"
+
+- include: etchosts.yml
+  tags:
+    - etchosts
+
+- include: centos.yml
+  when: ansible_distribution in [ 'CentOS','RedHat']
+
+- name: Create kubernetes directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  when: inventory_hostname in (groups['kube-master'] + groups['kube-node']+ groups['etcd']|default([]))|unique
+  tags:
+    - kubelet
+  with_items:
+    - "/etc/kubernetes"
+    - "/etc/kubernetes/pki"
+    - "/etc/kubernetes/manifests"
+    - "/etc/kubernetes/ssl/etcd"
+
+
+- name: Create cni directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  with_items:
+    - "/etc/cni/net.d"
+    - "/opt/cni/bin"
+  when:
+    - inventory_hostname in (groups['kube-master'] + groups['kube-node']+ groups['etcd']|default([]))|unique
+  tags:
+    - network
+
+- name: Ensure Yum repository
+  become: yes
+  yum_repository:
+    name: k8s
+    description: K8s Repository
+    baseurl: "{{k8s_yum_repo}}"
+    enabled: yes
+    gpgcheck: no
+    state: present
+
+- name: Download cfssl
+  get_url:
+    url: "{{k8s_yum_repo}}/cfssl/cfssl_linux-amd64"
+    dest: /usr/local/bin/cfssl
+    mode: 0755
+  when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
+
+- name: Download cfssljson
+  get_url:
+    url: "{{k8s_yum_repo}}/cfssl/cfssljson_linux-amd64"
+    dest: /usr/local/bin/cfssljson
+    mode: 0755
+  when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
+
+- name: Download cfssl-certinfo
+  get_url:
+    url: "{{k8s_yum_repo}}/cfssl/cfssl-certinfo_linux-amd64"
+    dest: /usr/local/bin/cfssl-certinfo
+    mode: 0755
+  when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
+
+

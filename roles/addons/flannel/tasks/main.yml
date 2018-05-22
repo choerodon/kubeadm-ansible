@@ -1,0 +1,37 @@
+---
+- name: Flannel | create flannel config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  when: inventory_hostname == groups['kube-master'][0]
+  tags:
+    - addons
+  with_items:
+    - "/etc/kubernetes/addons"
+    - "/etc/kubernetes/addons/flannel"
+
+- name: Flannel | Create cni-flannel-rbac manifest
+  template:
+    src: cni-flannel-rbac.yml.j2
+    dest: "/etc/kubernetes/addons/flannel/cni-flannel-rbac.yml"
+  register: flannel_rbac_manifest
+  when: inventory_hostname == groups['kube-master'][0]
+
+- name: Flannel | Create cni-flannel manifest
+  template:
+    src: cni-flannel.yml.j2
+    dest: "/etc/kubernetes/addons/flannel/cni-flannel.yml"
+  register: flannel_manifest
+  when: inventory_hostname == groups['kube-master'][0]
+
+- name: "Flannel | Create ServiceAccount ClusterRole and ClusterRoleBinding"
+  command: "kubectl apply -f /etc/kubernetes/addons/flannel/cni-flannel-rbac.yml"
+  run_once: true
+  when: flannel_rbac_manifest.changed and flannel_enable | default(true)
+
+- name: "Flannel | Start Resources"
+  command: "kubectl apply -f /etc/kubernetes/addons/flannel/cni-flannel.yml -n kube-system"
+  when: inventory_hostname == groups['kube-master'][0] and flannel_rbac_manifest.changed and flannel_enable | default(true)
+
+

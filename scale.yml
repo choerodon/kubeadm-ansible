@@ -1,0 +1,10 @@
+---
+
+- hosts: kube-node
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  roles:
+    - { role: base/variables, tags: default }
+    - { role: base/prepare, tags: prepare }
+    - { role: base/docker, tags: docker }
+    - { role: base/install, tags: install }
+    - { role: node, tags: node }

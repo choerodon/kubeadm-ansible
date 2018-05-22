@@ -1,0 +1,17 @@
+---
+
+- include: gen_etcd_certs.yml
+  when: inventory_hostname in groups['etcd']
+  tags:
+  - etcd-cert
+
+- include: "install_docker.yml"
+  when: inventory_hostname in groups['etcd']
+
+- include: configure.yml
+  when: inventory_hostname in groups['etcd']
+
+# - include: check_cluster_health.yml
+#   run_once: yes
+#   delegate_to: "{{groups['etcd'][0]}}"
+

@@ -1,0 +1,93 @@
+---
+- name: Create etcd cert dir
+  file:
+    path: "/etc/ssl/etcd/ssl"
+    state: directory
+    owner: root
+    mode: 0700
+    recurse: yes
+
+- name: "Create etcd certs config dir "
+  file:
+    path: "/etc/ssl/etcd/config"
+    state: directory
+    owner: root
+    mode: 0700
+  run_once: yes
+  delegate_to: "{{groups['etcd'][0]}}"
+
+- name: Copy certs config
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/ssl/etcd/config/{{ item }}"
+    mode: 0700
+  run_once: yes
+  delegate_to: "{{groups['etcd'][0]}}"
+  with_items:
+  - ca-config.json
+  - ca-csr.json
+
+- name: Write server-csr config
+  template:
+    src: "{{ item }}"
+    dest: "/etc/ssl/etcd/config/{{ item }}"
+    mode: 0755
+  run_once: yes
+  delegate_to: "{{groups['etcd'][0]}}"
+  with_items:
+  - client-csr.json
+  - server-csr.json
+  - peer-csr.json
+
+- name: "Copy gen certs script"
+  copy:
+    src: "gen_cert.sh"
+    dest: "/etc/ssl/etcd/gen_cert.sh"
+    mode: 0700
+  run_once: yes
+  delegate_to: "{{groups['etcd'][0]}}"
+
+
+- name: "Generate Ca certs"
+  shell: /etc/ssl/etcd/gen_cert.sh
+  run_once: yes
+  delegate_to: "{{groups['etcd'][0]}}"
+
+- name: slurp etcd certs
+  slurp:
+    src: "{{ item }}"
+  with_items:
+    - "/etc/ssl/etcd/ssl/ca.csr"
+    - "/etc/ssl/etcd/ssl/ca-key.pem"
+    - "/etc/ssl/etcd/ssl/ca.pem"
+    - "/etc/ssl/etcd/ssl/client.csr"
+    - "/etc/ssl/etcd/ssl/client-key.pem"
+    - "/etc/ssl/etcd/ssl/client.pem"
+    - "/etc/ssl/etcd/ssl/server.csr"
+    - "/etc/ssl/etcd/ssl/server-key.pem"
+    - "/etc/ssl/etcd/ssl/server.pem"
+    - "/etc/ssl/etcd/ssl/peer.csr"
+    - "/etc/ssl/etcd/ssl/peer-key.pem"
+    - "/etc/ssl/etcd/ssl/peer.pem"
+  register: etcd_certs
+  delegate_to: "{{ groups['etcd'][0] }}"
+  when: (groups['kube-master'] | length)!=1
+  run_once: true
+
+- name: write out etcd certs to other node
+  copy:
+    dest: "{{ item.item }}"
+    content: "{{ item.content | b64decode }}"
+    owner: root
+    group: root
+    mode: 0700
+  no_log: true
+  register: copy_etcd_certs
+  with_items: "{{ etcd_certs.results }}"
+  when: inventory_hostname != groups['etcd']|first
+
+
+
+
+
+

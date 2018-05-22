@@ -1,0 +1,23 @@
+---
+- name: Heapster | Create heapster dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  tags:
+    - addons
+  with_items:
+    - "/etc/kubernetes/addons"
+    - "/etc/kubernetes/addons/heapster"
+  when: inventory_hostname == groups['kube-master'][0] and heapster_enable | default(true)
+
+- name: Heapster | Copy heapster template
+  template:
+    src: "heapster-controller.yml.j2"
+    dest: "/etc/kubernetes/addons/heapster/heapster-controller.yml"
+  when: inventory_hostname == groups['kube-master'][0] and heapster_enable | default(true)
+
+- name:  Heapster | Start dashboard
+  command: kubectl apply -f /etc/kubernetes/addons/heapster/heapster-controller.yml -n kube-system
+  delegate_to: "{{ groups['kube-master']|first }}"
+  when: inventory_hostname == groups['kube-master'][0] and heapster_enable | default(true)

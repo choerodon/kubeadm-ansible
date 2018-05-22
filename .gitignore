@@ -1,0 +1,9 @@
+credentials/
+cluster.retry
+roles/debug
+debug.yml
+.DS_Store
+.vagrant
+debug.retry
+inventory/hosts
+Vagrantfile

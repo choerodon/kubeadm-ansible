@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingress-nginx
+  namespace: kube-system
+  labels:
+    app: ingress-nginx
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  - name: https
+    port: 443
+    targetPort: 443
+  selector:
+    app: ingress-nginx
+  externalIPs:
+  {% for host in groups['kube-master'] %}
+- {% if k8s_interface is defined %}{{ hostvars[host]['ansible_'+k8s_interface].ipv4.address }}{% else %}{{ hostvars[host]['ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}{% endif %} 
+  {% endfor %}

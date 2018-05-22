@@ -1,0 +1,24 @@
+{
+    "CN": "etcd-peer",
+    "hosts": [
+      "localhost",
+      "0.0.0.0",
+      "127.0.0.1",
+    {% for host in groups['etcd'] %}
+  "{% if k8s_interface is defined %}{{ hostvars[host]['ansible_'+k8s_interface].ipv4.address }}{% else %}{{ hostvars[host]['ip'] | default(hostvars[host]['ansible_default_ipv4']['address']) }}{% endif %}"{% if not loop.last %},{% endif %} 
+    {% endfor %}
+    ],
+    "key": {
+      "algo": "rsa",
+      "size": 2048
+    },
+    "names": [
+        {
+            "C": "CN",
+            "L": "Shanghai",
+            "O": "etcd",
+            "ST": "Shanghai",
+            "OU": "System"
+        }
+    ]
+  }

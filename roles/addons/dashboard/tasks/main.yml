@@ -1,0 +1,24 @@
+---
+- name: Dashboard | create dashboard config dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+  when: inventory_hostname == groups['kube-master'][0] and dashboard_enable | default(true)
+  tags:
+    - addons
+  with_items:
+    - "/etc/kubernetes/addons"
+    - "/etc/kubernetes/addons/dashboard"
+
+- name: copy dashboard template
+  template:
+    src: "dashboard.yml.j2"
+    dest: "/etc/kubernetes/addons/dashboard/dashboard.yml"
+  when: inventory_hostname == groups['kube-master'][0] and dashboard_enable | default(true)
+
+- name:  Start dashboard
+  command: kubectl apply -f /etc/kubernetes/addons/dashboard/dashboard.yml -n kube-system
+  delegate_to: "{{ groups['kube-master']|first }}"
+  when: inventory_hostname == groups['kube-master'][0] and dashboard_enable | default(true)
+

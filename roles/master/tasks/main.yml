@@ -1,0 +1,39 @@
+---
+- name: Check if kubeadm has already run
+  stat:
+    path: "/etc/kubernetes/pki/ca.key"
+  register: kubeadm_ca
+
+- name: generate k8s certs
+  include: gen-master-certs.yml
+
+- name: Include kubeadm
+  include: kubeadm-setup.yml
+
+- name: Create kube config dir
+  file:
+    path: "/root/.kube"
+    mode: "0700"
+    state: directory
+
+- name: Copy admin kubeconfig to root user home
+  copy:
+    src: "/etc/kubernetes/admin.conf"
+    dest: "/root/.kube/config"
+    remote_src: yes
+    mode: "0700"
+    backup: yes
+
+- name: Install kubectl bash completion
+  shell: "kubectl completion bash >/etc/bash_completion.d/kubectl.sh"
+  tags:
+    - kubectl
+
+- name: Set kubectl bash completion file
+  file:
+    path: /etc/bash_completion.d/kubectl.sh
+    owner: root
+    group: root
+    mode: 0755
+  tags:
+    - kubectl

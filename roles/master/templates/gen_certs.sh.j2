@@ -1,0 +1,41 @@
+#!/bin/bash
+
+cd /etc/kubernetes/pki/
+
+# 1. 生成CA根证书
+# 生成私钥
+openssl genrsa -out ca.key 2048 > /dev/null 2>&1
+# 自签名CA证书  （CommonName: "kubernetes"）
+openssl req -new -x509 -days {{kube_certs_time}} -key ca.key -out ca.crt -subj "/CN=kubernetes" 
+
+# 2. APIServerCert
+# 根据CA根证书和CA私钥生成 
+# CommonName: "kube-apiserver"
+
+# 生成apiserver的私钥
+openssl genrsa -out apiserver.key 2048 > /dev/null 2>&1
+# 使用私钥和CA证书自签名
+openssl req -new -key apiserver.key -out apiserver.csr -subj "/CN=kube-apiserver" -config /etc/kubernetes/openssl-config/openssl-server.cnf
+openssl x509 -req -in apiserver.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out apiserver.crt -days {{kube_certs_time}} -extensions v3_req -extfile /etc/kubernetes/openssl-config/openssl-server.cnf
+
+# 3. APIServerKubeletClientCert
+
+openssl genrsa -out apiserver-kubelet-client.key 2048
+openssl req -new -key apiserver-kubelet-client.key -out apiserver-kubelet-client.csr -subj "/CN=kube-apiserver-kubelet-client /O=system:masters" -config /etc/kubernetes/openssl-config/openssl-client.cnf
+openssl x509 -req -in apiserver-kubelet-client.csr  -CA ca.crt -CAkey ca.key -CAcreateserial -out apiserver-kubelet-client.crt -days {{kube_certs_time}} -extensions v3_req -extfile /etc/kubernetes/openssl-config/openssl-client.cnf
+
+# 4. 创建proxy的CA证书
+
+openssl genrsa -out front-proxy-ca.key 2048 > /dev/null 2>&1
+
+openssl req -new -x509 -days {{kube_certs_time}} -key front-proxy-ca.key -out front-proxy-ca.crt -subj "/CN=kubernetes"
+
+# 5. ProxyClientCert
+
+openssl genrsa -out front-proxy-client.key 2048 > /dev/null 2>&1
+
+openssl req -new -key front-proxy-client.key -out front-proxy-client.csr -subj "/CN=front-proxy-client" -config /etc/kubernetes/openssl-config/openssl-client.cnf
+
+openssl x509 -req -in front-proxy-client.csr  -CA front-proxy-ca.crt -CAkey front-proxy-ca.key -CAcreateserial -out front-proxy-client.crt -days {{kube_certs_time}} -extensions v3_req -extfile /etc/kubernetes/openssl-config/openssl-client.cnf
+
+

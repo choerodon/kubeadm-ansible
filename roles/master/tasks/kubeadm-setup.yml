@@ -1,0 +1,124 @@
+---
+- name: set interface ip
+  set_fact: interface_ip="{% if k8s_interface is defined %}{{hostvars[inventory_hostname]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[inventory_hostname]['ip']|default(hostvars[inventory_hostname]['ansible_default_ipv4']['address'])}}{% endif %}"
+
+
+- name: kubeadm | aggregate all SANs
+  set_fact:
+    apiserver_sans: >-
+      kubernetes
+      kubernetes.default
+      kubernetes.default.svc
+      kubernetes.default.svc.{{ dns_domain }}
+      {{ kube_apiserver_ip }}
+      localhost
+      127.0.0.1
+      {{ ' '.join(groups['kube-master']) }}
+      {%- for host in groups['kube-master'] -%}
+      {% if k8s_interface is defined %}
+      {{hostvars[host]['ansible_'+k8s_interface].ipv4.address}}
+      {%- else %}
+      {{hostvars[host]['ip']|default(hostvars[host]['ansible_default_ipv4']['address'])}}
+      {%- endif %}
+      {%- endfor %}
+  tags: facts
+
+
+- name: kubeadm | Create kubeadm config
+  template:
+    src: kubeadm-config-{{kube_version}}.yaml.j2
+    dest: "/etc/kubernetes/kubeadm-config.yaml"
+  register: kubeadm_config
+
+
+- name: kubeadm | Initialize first master
+  environment:
+    - KUBE_REPO_PREFIX: "{{kube_image_repo}}"
+    - http_proxy: ""
+    - https_proxy: ""
+    - no_proxy: ""
+  command: kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml --skip-preflight-checks
+  register: kubeadm_init
+  # Retry is because upload config sometimes fails
+  retries: 3
+  when: inventory_hostname == groups['kube-master']|first and not kubeadm_ca.stat.exists
+  failed_when: kubeadm_init.rc != 0 and "field is immutable" not in kubeadm_init.stderr
+  notify: Master | restart kubelet
+
+- name: slurp kubeadm certs
+  slurp:
+    src: "{{ item }}"
+  with_items:
+    - "/etc/kubernetes/pki/apiserver.crt"
+    - "/etc/kubernetes/pki/apiserver.key"
+    - "/etc/kubernetes/pki/apiserver-kubelet-client.crt"
+    - "/etc/kubernetes/pki/apiserver-kubelet-client.key"
+    - "/etc/kubernetes/pki/ca.crt"
+    - "/etc/kubernetes/pki/ca.key"
+    - "/etc/kubernetes/pki/front-proxy-ca.crt"
+    - "/etc/kubernetes/pki/front-proxy-ca.key"
+    - "/etc/kubernetes/pki/front-proxy-client.crt"
+    - "/etc/kubernetes/pki/front-proxy-client.key"
+    - "/etc/kubernetes/pki/sa.key"
+    - "/etc/kubernetes/pki/sa.pub"
+  register: kubeadm_certs
+  delegate_to: "{{ groups['kube-master']|first }}"
+  when: (groups['kube-master'] | length)!=1
+  run_once: true
+
+- name: kubeadm | write out kubeadm certs
+  copy:
+    dest: "{{ item.item }}"
+    content: "{{ item.content | b64decode }}"
+    owner: root
+    group: root
+    mode: 0700
+  no_log: true
+  register: copy_kubeadm_certs
+  with_items: "{{ kubeadm_certs.results }}"
+  when: inventory_hostname != groups['kube-master']|first
+
+- name: kubeadm | Init other uninitialized masters
+  environment:
+    - KUBE_REPO_PREFIX: "{{kube_image_repo}}"
+    - http_proxy: ""
+    - https_proxy: ""
+    - no_proxy: ""
+  command: kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml --skip-preflight-checks
+  register: kubeadm_init
+  when: inventory_hostname != groups['kube-master']|first and not kubeadm_ca.stat.exists
+  failed_when: kubeadm_init.rc != 0 and "field is immutable" not in kubeadm_init.stderr
+  notify: Master | restart kubelet
+
+
+- name: kubeadm | Create kubedns service config
+  template:
+    src: kube-dns-service.yml.j2
+    dest: "/etc/kubernetes/kube-dns-service.yml"
+  register: kubedns_config
+
+- name: kubeadm | delete old kube-dns service
+  command: kubectl delete svc kube-dns -n kube-system
+  ignore_errors: yes
+  when: inventory_hostname == groups['kube-master']|first
+
+- name: kubeadm | create kube-dns service
+  command: kubectl apply -f /etc/kubernetes/kube-dns-service.yml
+  ignore_errors: yes
+  when: inventory_hostname == groups['kube-master']|first
+
+
+- name: Update kube-proxy command args
+  shell: "kubectl -n kube-system get ds -l 'k8s-app=kube-proxy' -o json | jq '.items[0].spec.template.spec.containers[0].command += [\"--masquerade-all\"]' | kubectl apply -f - && kubectl delete pods -n kube-system -l 'k8s-app=kube-proxy'"
+  when: inventory_hostname == groups['kube-master']|first
+  retries: 4
+  delay: 10
+
+# - name: Copy kube-proxy config
+#   template:
+#     src: kube-proxy-ds.yml.j2
+#     dest: "/etc/kubernetes/kube-proxy-ds.yml"
+
+# - name: Update kube-proxy
+#   command: kubectl apply -f /etc/kubernetes/kube-proxy-ds.yml
+#   when: inventory_hostname == groups['kube-master']|first

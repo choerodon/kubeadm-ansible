@@ -1,0 +1,120 @@
+---
+- name: set timezone to Asia/ShangHai
+  timezone:
+    name: Asia/Shanghai
+
+- name: sysctl set net.ipv4.ip_forward=1
+  become: yes
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: 1
+    state: present
+  tags:
+    - k8s
+    - preinstall
+
+- selinux:
+    state: disabled
+
+- name: Check presence of fastestmirror.conf
+  stat:
+    path: /etc/yum/pluginconf.d/fastestmirror.conf
+  register: fastestmirror
+
+# fastestmirror plugin actually slows down Ansible deployments
+- name: Disable fastestmirror plugin
+  lineinfile:
+    dest: /etc/yum/pluginconf.d/fastestmirror.conf
+    regexp: "^enabled=.*"
+    line: "enabled=0"
+    state: present
+  ignore_errors: yes
+  when: fastestmirror.stat.exists
+
+
+- name: Verify if br_netfilter module exists
+  shell: "modinfo br_netfilter"
+  register: modinfo_br_netfilter
+  failed_when: modinfo_br_netfilter.rc not in [0, 1]
+  changed_when: false
+
+- name: Enable br_netfilter module
+  modprobe:
+    name: br_netfilter
+    state: present
+  when: modinfo_br_netfilter.rc == 0
+
+- name: Persist br_netfilter module
+  copy:
+    dest: /etc/modules-load.d/kubespray-br_netfilter.conf
+    content: br_netfilter
+  when: modinfo_br_netfilter.rc == 0
+
+# kube-proxy needs net.bridge.bridge-nf-call-iptables enabled when found if br_netfilter is not a module
+- name: Check if bridge-nf-call-iptables key exists
+  command: "sysctl net.bridge.bridge-nf-call-iptables"
+  failed_when: false
+  changed_when: false
+  register: sysctl_bridge_nf_call_iptables
+
+- name: Enable bridge-nf-call tables
+  sysctl:
+    name: "{{ item }}"
+    state: present
+    value: 1
+    reload: yes
+  when: modinfo_br_netfilter.rc == 1 and sysctl_bridge_nf_call_iptables.rc == 0
+  with_items:
+    - net.bridge.bridge-nf-call-iptables
+    - net.bridge.bridge-nf-call-arptables
+    - net.bridge.bridge-nf-call-ip6tables
+
+# - name: Ensure firewalld.service
+#   service: name=firewalld state=stopped enabled=no
+#   ignore_errors: yes
+
+- name: iptables accept all traffic from other node
+  iptables:
+    action: insert
+    chain: INPUT
+    protocol: all
+    source: "{% if k8s_interface is defined %}{{hostvars[item]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[item]['ip']|default(hostvars[item]['ansible_default_ipv4']['address'])}}{% endif %}"
+    jump: ACCEPT
+  with_items: "{{(groups['kube-master'] + groups['kube-node'] +groups['etcd']|default([]))|unique}}"
+
+
+- name: iptables output all traffic from other node
+  iptables:
+    action: insert
+    chain: OUTPUT
+    protocol: all
+    source: "0.0.0.0/0"
+    destination: "{% if k8s_interface is defined %}{{hostvars[item]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[item]['ip']|default(hostvars[item]['ansible_default_ipv4']['address'])}}{% endif %}"
+    jump: ACCEPT
+  with_items: "{{(groups['kube-master'] + groups['kube-node'] +groups['etcd']|default([]))|unique}}"
+
+- name: iptables forward all traffic from other node
+  iptables:
+    action: insert
+    chain: FORWARD
+    protocol: all
+    jump: ACCEPT
+
+
+- name: iptables accept all traffic from kube pod subnet
+  iptables:
+    action: insert
+    chain: INPUT
+    protocol: all
+    source: "{{kube_pods_subnet}}"
+    destination: "0.0.0.0/0"
+    jump: ACCEPT
+
+- name: iptables output all traffic from kube pod subnet
+  iptables:
+    action: insert
+    chain: OUTPUT
+    protocol: all
+    source: "0.0.0.0/0"
+    destination: "{{kube_pods_subnet}}"
+    jump: ACCEPT

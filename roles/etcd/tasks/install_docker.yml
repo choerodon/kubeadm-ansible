@@ -1,0 +1,15 @@
+---
+
+# - name: Download etcd image
+#   command: sh -c "docker pull {{ etcd_image_repo }}:{{ etcd_image_tag }}"
+
+- name: Copy etcdctl binary from docker container
+  command: sh -c "docker rm -f etcdctl-binarycopy;
+           docker create --name etcdctl-binarycopy {{ etcd_image_repo }}:{{ etcd_image_tag }} &&
+           docker cp etcdctl-binarycopy:/usr/local/bin/etcdctl /usr/local/bin/etcdctl &&
+           docker rm -f etcdctl-binarycopy"
+  register: etcd_task_result
+  until: etcd_task_result.rc == 0
+  retries: 4
+  delay: 300
+  changed_when: false

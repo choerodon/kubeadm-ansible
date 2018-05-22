@@ -1,0 +1,19 @@
+is_kube_master: "{{ inventory_hostname in groups['kube-master'] }}"
+
+first_kube_master: "{% if k8s_interface is defined %}{{hostvars[groups['kube-master'][0]]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[groups['kube-master'][0]]['ip']|default(hostvars[groups['kube-master'][0]]['ansible_default_ipv4']['address'])}}{% endif %}"
+
+first_kube_master_endpoint: https://{{ first_kube_master }}:{{ kube_apiserver_port }}
+
+loadbalancer_apiserver_localhost: "{{ loadbalancer_apiserver is not defined }}"
+
+kube_apiserver_endpoint: |-
+  {% if not is_kube_master -%}
+       https://localhost:{{ kube_apiserver_port }}
+  {%- elif is_kube_master -%}
+       https://127.0.0.1:{{ kube_apiserver_port }}
+  {%- else -%}
+       {{first_kube_master_endpoint}}
+  {%- endif %}
+
+
+  

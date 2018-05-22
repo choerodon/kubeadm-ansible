@@ -1,0 +1,10 @@
+---
+- name: Configure | Check if cluster is healthy
+  shell: "/usr/local/bin/etcdctl --ca-file /etc/ssl/etcd/ssl/ca.pem --cert-file /etc/ssl/etcd/ssl/client.pem --key-file /etc/ssl/etcd/ssl/client-key.pem --peers https://127.0.0.1:2379 cluster-health | grep -q 'cluster is healthy'"
+  register: etcd_cluster_is_healthy
+  ignore_errors: true
+  changed_when: false
+  check_mode: no
+  until: etcd_cluster_is_healthy.rc == 0
+  retries: 10
+  delay: 5

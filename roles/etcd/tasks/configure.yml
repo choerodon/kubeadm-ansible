@@ -1,0 +1,39 @@
+---  
+
+- name:  Create etcd env config file
+  template:
+    src: etcd.env.j2
+    dest: /etc/etcd.env
+  when: inventory_hostname in groups['etcd']
+
+- name: Install etcd launch script
+  template:
+    src: etcd.j2
+    dest: "/usr/local/bin/etcd"
+    owner: 'root'
+    mode: 0755
+    backup: yes
+  when: inventory_hostname in groups['etcd']
+#  notify: restart etcd
+
+- name: Configure | Copy etcd.service systemd file
+  template:
+    src: "etcd-docker.service.j2"
+    dest: /etc/systemd/system/etcd.service
+    backup: yes
+  when: inventory_hostname in groups['etcd']
+#  notify: restart etcd
+
+- name: reload systemd
+  command: systemctl daemon-reload
+
+- name: ensure etcd service is started and enabled
+  service:
+    name: etcd
+    enabled: yes
+    state: started
+  notify: wait for etcd up
+
+- name: Copy etcd cert dir under k8s cert dir
+  command: "cp -TR /etc/ssl/etcd/ssl /etc/kubernetes/ssl/etcd"
+  changed_when: false

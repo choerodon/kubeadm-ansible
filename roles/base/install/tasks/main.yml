@@ -1,0 +1,63 @@
+---
+# - name: Ensure Kubernetes YUM repository
+#   become: yes
+#   yum_repository:
+#     name: k8s
+#     description: Kubernetes YUM repository
+#     baseurl: "{{k8s_yum_repo}}"
+#     enabled: yes
+#     gpgcheck: no
+#     state: present
+#   tags:
+#     - k8s
+
+- name: Ensure Base Kubernetes
+  become: yes
+  yum:
+    name: "{{ item }}"
+    state: latest
+    enablerepo: "k8s"
+  with_items: "{{ kube_version_rpm[kube_version | string] }}"
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
+  tags:
+    - k8s
+
+- name: Ensure kubelet systemd config
+  template:
+    src: "20-kubelet-override-{{kube_version}}.conf"
+    dest: "/etc/systemd/system/kubelet.service.d/20-kubelet-override.conf"
+    owner: 'root'
+    mode: 0755
+    backup: yes
+
+
+- name: Ensure kubelet.service
+  service: name=kubelet state=started enabled=yes
+  tags:
+    - k8s
+
+- name: Reload Kubelet
+  become: yes
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+    daemon_reload: yes
+  with_items:
+    - kubelet
+
+
+- name: Ensure jq package is installed
+  become: yes
+  yum:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - jq
+    - bash-completion
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"

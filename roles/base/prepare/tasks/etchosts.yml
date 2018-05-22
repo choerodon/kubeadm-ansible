@@ -1,0 +1,30 @@
+---
+- name: set interface ip
+  set_fact: interface_ip="{% if k8s_interface is defined %}{{hostvars[inventory_hostname]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[inventory_hostname]['ip']|default(hostvars[inventory_hostname]['ansible_default_ipv4']['address'])}}{% endif %}"
+
+- name: Hosts | populate inventory into hosts file
+  blockinfile:
+    dest: /etc/hosts
+    block: |-
+      {% for item in (groups['kube-master'] + groups['kube-node'] +groups['etcd']|default([]))|unique -%}{% if k8s_interface is defined %}{{hostvars[item]['ansible_'+k8s_interface].ipv4.address}}{% else %}{{hostvars[item]['ip']|default(hostvars[item]['ansible_default_ipv4']['address'])}}{% endif %} {{ item }} {{ item }}.{{ dns_domain }}
+      {% endfor %}
+    state: present
+    create: yes
+    backup: yes
+    marker: "# Ansible inventory hosts {mark}"
+
+- name: Hosts | localhost ipv4 in hosts file
+  lineinfile:
+    dest: /etc/hosts
+    line: "127.0.0.1 localhost localhost.localdomain"
+    regexp: '^127.0.0.1.*$'
+    state: present
+    backup: yes
+
+- name: Hosts | localhost ipv6 in hosts file
+  lineinfile:
+    dest: /etc/hosts
+    line: "::1 localhost6 localhost6.localdomain"
+    regexp: '^::1.*$'
+    state: present
+    backup: yes

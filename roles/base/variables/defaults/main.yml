@@ -1,0 +1,124 @@
+# =========================== kube 变量 =================================
+
+# 暂时只支持v1.7.0和v1.8.1
+kube_version: "v1.8.1"
+
+# pod的ip范围
+kube_pods_subnet: 10.233.64.0/18
+
+# service的ip范围
+kube_service_addresses: 10.233.0.0/18
+
+dns_domain: "cluster.local"
+
+kube_apiserver_ip: "{{ kube_service_addresses|ipaddr(1)|ipaddr('address') }}"
+
+kube_apiserver_port: 6443
+
+kube_cadvisor_port: 4194
+
+# kube-dns service ip
+kube_dns_server: "{{ kube_service_addresses|ipaddr(10)|ipaddr('address') }}"
+
+kubeadm_token: "abcdef.0123456789abcdef"
+
+# kubeadm 证书有效时间(单位: /天)
+kube_certs_time: 3650
+
+# kubelet资源阈值和驱逐策略
+eviction:
+  hard:
+    memory:
+      available: 512Mi
+    nodefs:
+      available: 10Gi
+    imagefs:
+      available: 10Gi
+  # 资源至少回收的期望值
+  minimum_reclaim:
+    memory:
+      available: 500Mi
+    nodefs:
+      available: 5Gi
+    imagefs:
+      available: 5Gi
+  # 定义了在跳出压力状态之前要等待的时间
+  pressure:
+    transition:
+      period: 5m0s
+
+# 系统保留资源
+system:
+  reserved:
+    cpu: 100m
+    memory: 1Gi
+
+
+
+# =========================== 镜像仓库 =================================
+image_repo: "registry.cn-hangzhou.aliyuncs.com/choerodon-tools"
+
+kube_image_repo: "{{image_repo}}"
+
+pause_amd_image_repo: "{{kube_image_repo}}/pause-amd64"
+pause_amd_image_tag: "3.0"
+
+etcd_image_repo: "{{ image_repo }}/etcd"
+etcd_image_tag: "v3.2.4"
+
+dashboard_init_image_repo: "{{kube_image_repo}}/kubernetes-dashboard-init-amd64"
+dashboard_init_image_tag: "v1.0.1"
+dashboard_image_repo: "{{kube_image_repo}}/kubernetes-dashboard-amd64"
+dashboard_image_tag: "v1.7.1"
+
+flannel_image_repo: "{{image_repo}}/flannel"
+flannel_image_tag: "v0.9.0"
+
+flannel_cni_image_repo: "{{image_repo}}/flannel-cni"
+flannel_cni_image_tag: "v0.3.0"
+
+nginx_ingress_controller_image_repo: "{{image_repo}}/nginx-ingress-controller"
+nginx_ingress_controller_image_tag: "0.9.0-beta.17"
+
+default_http_backend_image_repo: "{{kube_image_repo}}/defaultbackend"
+default_http_backend_image_tag: "1.4"
+
+heapster_image_repo: "{{kube_image_repo}}/heapster-amd64"
+heapster_image_tag: "v1.4.2"
+
+kube_lego_repo: "{{image_repo}}/kube-lego"
+kube_lego_tag: "0.1.5"
+
+nginx_image_repo: "{{image_repo}}/nginx"
+nginx_image_tag: "1.11.4-alpine"
+
+# ================================= yum 源 =================================
+
+k8s_yum_repo: "http://file.choerodon.com.cn/kubernetes/"
+
+docker_version_name: "docker-engine-17.05.0.ce-1.el7.centos"
+
+
+# ================================= proxy代理 =================================
+
+#http_proxy: http://10.79.1.161:3128
+#https_proxy: http://10.79.1.161:3128
+#no_proxy: localhost,127.0.0.0/8
+docker_proxy_enable: false
+
+# ================================= 插件 =================================
+
+flannel_enable: true
+
+dashboard_enable: true
+
+ingress_nginx_enable: true
+
+heapster_enable: true
+
+kube_lego_enable: true
+
+# ================================= docker参数 =================================
+
+insecure_registries:
+  - "{{ kube_service_addresses }}"

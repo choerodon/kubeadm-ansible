@@ -1,0 +1,42 @@
+---
+
+- name: Create master certs dir
+  file:
+    path: "/etc/kubernetes/openssl-config"
+    state: directory
+    owner: root
+    mode: 0700
+    recurse: yes
+  run_once: yes
+  delegate_to: "{{groups['kube-master'][0]}}"
+
+- name: Copy apiserver openssl cnf file
+  template:
+    src: "openssl-server.cnf.j2"
+    dest: "/etc/kubernetes/openssl-config/openssl-server.cnf"
+    mode: 0700
+  run_once: yes
+  delegate_to: "{{groups['kube-master'][0]}}"
+
+- name: Copy kubelet client openssl cnf file
+  template:
+    src: "openssl-client.cnf.j2"
+    dest: "/etc/kubernetes/openssl-config/openssl-client.cnf"
+    mode: 0700
+  run_once: yes
+  delegate_to: "{{groups['kube-master'][0]}}"
+
+- name: "Copy gen certs script"
+  template:
+    src: "gen_certs.sh.j2"
+    dest: "/etc/kubernetes/openssl-config/gen_certs.sh"
+    mode: 0700
+  run_once: yes
+  delegate_to: "{{groups['kube-master'][0]}}"
+
+- name: "Generate master certs"
+  shell: /etc/kubernetes/openssl-config/gen_certs.sh
+  run_once: yes
+  delegate_to: "{{groups['kube-master'][0]}}"
+  when: not kubeadm_ca.stat.exists
+

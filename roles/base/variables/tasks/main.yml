@@ -1,0 +1,6 @@
+---
+- name: Set task variables
+  debug:
+    msg: "Check roles/variables/defaults/main.yml"
+  tags:
+    - always

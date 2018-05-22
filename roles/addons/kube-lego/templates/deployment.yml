@@ -1,0 +1,39 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: kube-lego
+  name: kube-lego
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: kube-lego
+    spec:
+      serviceAccountName: kube-lego
+      containers:
+        - name: kube-lego
+          image: "{{kube_lego_repo}}:{{kube_lego_tag}}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LEGO_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: LEGO_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: LEGO_EMAIL
+              value: "{{ kube_lego_email | default('example@choerodon.io') }}"
+            - name: LEGO_URL
+              value: https://acme-v01.api.letsencrypt.org/directory
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            timeoutSeconds: 1

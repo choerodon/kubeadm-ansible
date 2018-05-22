@@ -1,0 +1,56 @@
+--- 
+- name: Ensure docker-engine
+  become: yes
+  yum:
+    name: "{{ item }}"
+    state: present
+    enablerepo: "k8s"
+  with_items:
+    - "{{docker_version_name}}"
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
+  tags:
+    - docker
+
+- name: Ensure /etc/docker directory
+  become: yes
+  file:
+    path: "{{item}}"
+    state: directory
+    mode: 0700
+  with_items:
+  - /etc/docker
+  - /etc/systemd/system/docker.service.d
+
+- name: Ensure dockerd configuration
+  template:
+    src: "docker-daemon.json.j2"
+    dest: "/etc/docker/daemon.json"
+    owner: 'root'
+    mode: 0644
+  register: configuration_result
+
+- name: Enable docekr proxy
+  template:
+    src: "docker-proxy.conf"
+    dest: "/etc/systemd/system/docker.service.d/docker-proxy.conf"
+    owner: 'root'
+    mode: 0755
+  register: proxy_result
+  when: docker_proxy_enable | default(false)
+
+- name: reload systemd
+  command: systemctl daemon-reload
+  when: docker_proxy_enable and proxy_result.changed | default(false)
+
+
+- name: restart docker
+  service:
+    name: docker
+    state: restarted
+    enabled: yes
+  when: configuration_result.changed
+  tags:
+    - docker
