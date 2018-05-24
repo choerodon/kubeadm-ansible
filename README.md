@@ -1,8 +1,12 @@
-## 1. 环境准备
+# Kubeadmin Ansible [中文](README_zh-CN.md)
 
-> 注意：目前只支持centos 7.2+
+Kubeadmin ansible is a toolkit for simple and quick installing k8s cluster. 
 
-在要执行ansible脚本的机器上安装ansible运行需要的环境：
+## 1. Environmental preparation
+
+>Note: Currently only centos 7.2+ is supported
+
+Install the ansible run environment on the machine where the ansible script is to be executed:
 
 ```
 sudo yum install -y epel-release
@@ -18,23 +22,25 @@ sudo yum install -y \
     python-passlib \
     python-pip
 
-# 查看ansible版本（version>=2.4.0.0）
+```
+View the version of ansible (version>=2.4.0.0)
+```
 ansible --version
 ```
 
-克隆项目：
+Clone project：
 
 ```
 git clone https://github.com/choerodon/kubeadm-ansible.git
 ```
 
-## 2. 修改hosts
+## 2. Modify hosts
 
- 编辑项目下的`inventory/hosts`文件,修改各机器的访问地址、用户名、密码，并维护好各节点与角色的关系,前面的名称为机器的hostname。该用户必须是具有root权限的用户。
+ Edit the `inventory/hosts` file under the toolkit, modify the access address, user name, and password of each machine and maintain the relationship between each node and role. The front name is the hostname of the machine. The user must have root privileges.
 
- > 注意：etcd节点和master节点需要在相同的机器。
+ > Note: The `etcd` node and the `master` node need to be on the same machine.
 
- 比如,想要部署单节点集群,只需要这样配置(参考)：
+ For example, if deploy a single-node cluster, configure it (reference):
 
  ```
 [all]
@@ -51,15 +57,14 @@ node1
 
  ```
 
-## 3. 修改变量
+## 3. Modify the variable
 
-编辑项目下的`inventory/vars`文件,修改变量`k8s_interface`的值为要部署机器的ipv4的网卡名称(centos默认是eth0),如果不确定可使用`ifconfig`命令查看。
+Edit the `inventory/vars` file under the toolkit, and change the value of `k8s_interface` to the name of the ipv4 NIC (centos defaults to eth0). If not sure, use the `ifconfig` command to check it.
 
 ```
 k8s_interface: "eth0"
 ```
-注意:如果各个机器之间网卡名称不一致,请将`k8s_interface`变量从`inventory/vars`文件删掉，并在`inventory/host`文件中给每个机器加上ip地址，比如:
-
+Note: If the names of the network card are not the same between the machines, delete the `k8s_interface` variable from the `inventory/vars` file and add an IP address to each machine in the `inventory/host` file. For example:
 ```
 [all]
 node1 ansible_host=192.168.56.11 ip=192.168.56.11 ansible_user=root ansible_ssh_pass=change_it ansible_become=true
@@ -67,7 +72,7 @@ node1 ansible_host=192.168.56.11 ip=192.168.56.11 ansible_user=root ansible_ssh_
 ...
 ```
 
-如果所有机器以`代理的方式`访问外网,请配置以下几个变量,否则请不要配置:
+If all machines access the external network as `proxy', please configure the following variables, otherwise do not configure:
 
 ```
 http_proxy: http://1.2.3.4:3128
@@ -76,72 +81,72 @@ no_proxy: localhost,127.0.0.0/8
 docker_proxy_enable: true
 ```
 
-## 4. 部署
+## 4. Deploy
 
-> 如果在阿里云上部署先阅读第7点
+> If deploy on Alibaba Cloud, please read **Alibaba Cloud Deployment** first in this page.
 
-执行:
+Execute:
 
 ```
 ansible-playbook -i inventory/hosts -e @inventory/vars cluster.yml
 ```
 
-查看等待pod的状态为runnning:
+View the status of the waiting pod for running:
 
 ```
 kubectl get po -n kube-system
 ```
 
-如果部署失败，想要重置集群(所有数据),执行：
+If the deployment fails and you want to reset the cluster (all data), execute:
 
 ```
 ansible-playbook -i inventory/hosts reset.yml
 ```
 
-## 5. Ingress TSL配置
+## 5. Ingress TSL configuration
 
-参考:[TSL配置说明](docs/ingress-nginx.md)
+Reference: [TSL Configuration Notes] (docs/ingress-nginx.md)
 
-## 6. Dashboard 配置
+## 6. Dashboard configuration
 
-参考:[Dashboard配置说明](docs/dashboard.md)
+Reference: [Dashboard configuration instructions] (docs/dashboard.md)
 
-## 7. 阿里云部署
+## 7. Alibaba Cloud Deployment
 
-### 修改Hostname(*)
+### Modify Hostname(*)
 
-在阿里云的ECS的控制面板上修改ECS实例的hostname,名称最好只包含小写字母、数字和中划线。并保持与`inventory/hosts`中的名称与ECS控制台上的名称保持一致,重启生效。
+Modify the hostname of the ECS instance on the control panel of ECS. The name should preferably contain only lowercase letters, numbers, and dash. And keep consistent with the name in the ʻinventory/hosts` and the name of ECS console, restart to take effect.
 
-### 网段选择(*)
+### Segment selection (*)
 
-如果ECS服务器用的是专有网络,pod和service的网段不能与vpc网段重叠，示例参考：
-
+If the ECS server uses a private network, the segments of pod and service cannot overlap with the VPC segment. For example, refer to:
 ```
-# 如果vpc网段为`172.*`
+
+# If the vpc segment is `172.*`
 kube_pods_subnet: 192.168.0.0/20
 kube_service_addresses: 192.168.255.0/20
 
-# 如果vpc网段为`10.*`
+# If the vpc segment is `10.*`
 kube_pods_subnet: 172.16.0.0/16
 kube_service_addresses: 172.19.0.0/20
 
-# 如果vpc网段为`192.168.*`
+# If the vpc segment is `192.168.*`
 kube_pods_subnet: 172.16.0.0/16
 kube_service_addresses: 172.19.0.0/20
 
 ```
 
-### flannel类型(*)
+### Flannel type (*)
 
-在使用VPC网络的ECS上部署k8s时，flannel网络的Backend类型需要是`ali-vpc`。在本脚本中默认使用的是`vxlan`类型，虽然在vpc环境下网络能通,但是不稳定波动较大。所以推荐使用`ali-vpc`的类型。
+When deploying k8s on an ECS using a VPC network, the backend type of the flannel network needs to be `ali-vpc`. By default, the `vxlan` type is used in this script. Although the network is able to communicate in the VPC environment, the instability fluctuates. So it is recommended to use the `ali-vpc` type.
 
-因此,首先需要设置默认的flannel网络不安装，通过在`inventory/vars`文件中添加变量：
+Therefore, set the default flannel network to not be installed by adding variables in the `inventory/vars` file:
 
 ```
 flannel_enable: false
 ```
 
-跑完ansible脚本后手动安装flannel网络插件,在其中一个master节点创建配置文件`kube-flannel-aliyun.yml`:
+After running the ansible script, manually install the flannel network plugin and create the configuration file `kube-flannel-aliyun.yml` on one of the master nodes:
 
 ```
 ---
@@ -287,39 +292,40 @@ spec:
             name: kube-flannel-cfg
 ```
 
-请注意修改配置中的参数值：
+Please pay attention to modify the parameter value in the configuration:
 
-- `Network`：为pod网段。
+- `Network`：The network segment of Pod.
 
-- `ACCESS_KEY_ID`:必填
+- `ACCESS_KEY_ID`: Required
 
-- `ACCESS_KEY_SECRET`:必填
+- `ACCESS_KEY_SECRET`: Required
 
-该ACCESS_KEY的用户需要拥有以下权限：
+The`ACCESS_KEY` user has the following permissions:
 
-- 只读访问云服务器(ECS)的权限
-- 管理专有网络(VPC)的权限
+- Read-only access to cloud server (ECS) permissions
+- Manage Permissions for a Private Network (VPC)
 
-然后使用kubectl命令部署,部署成功后在vpc的路由表中会添加多条路由条目,下一跳分别为每个节点的pod ip段：
+Then use the `kubectl` command to deploy. After the deployment is successful, multiple route entries have been added to the routing table of the VPN. The next hop is the pod IP segment of each node.
 
 ```
 kubectl apply -f kube-flannel-aliyun.yml
 ```
 
-接下来需要在ECS安全组，在入方向规则中加上pod网段的地址。否则在pod容器中无法访问别的节点的pod的端口,比如:
+Next, in the ECS security group, add the address of the pod network segment in the inbound rule. Otherwise, the ports of other nodes' pods cannot be accessed in the pod container. For example:
 
-授权策略 | 协议类型 | 端口范围 | 授权类型 | 授权对象 | ...
+Authorization Policy | Protocol Type | Port Range | Authorization Type | Authorization Object | ...
 ---|---|---|---|---|---
-允许 | 全部 | -1/-1 | 地址段访问 | 192.168.0.0/20 | ...
+Allow | All | -1/-1 | Address Segment Access | 192.168.0.0/20 | ...
 
 
-###  绑定云盘存储
 
-一般情况下，我们pv都是使用nfs进行存储的，但是读写效率不是很高，对于有高读写性能要求的可以配置云盘作为挂载卷。
+###  Binding Cloud Storage
 
-如果想要使用aliyun的云盘存储,还需要部署aliyun-controller组件。
+Under normal circumstances, `pv` are stored using `nfs`, but the efficiency of reading and writing is not very high, for `pv` with high performance requirements for reading and writing, you can configure the cloud disk as a mount volume.
 
-首先,在`所有节点`执行以下命令，将`aliyun-flexv`二进制文件拷贝到kubele插件目录下:
+If use aliyun cloud storage, also need to deploy `aliyun-controller` components.
+
+First, execute the following command on `all nodes`. Copy the `aliyun-flexv` binary file into the kubele plugin directory:
 
 ```
 FLEXPATH=/usr/libexec/kubernetes/kubelet-plugins/volume/exec/aliyun~flexv; 
@@ -327,35 +333,35 @@ sudo mkdir $FLEXPATH -p;
 docker run --rm -v $FLEXPATH:/opt registry.aliyuncs.com/kubeup/kube-aliyun cp /flexv /opt/
 ```
 
-然后,修改本项目下的`roles/addons/kubeup`下的`aliyun-controller.yml`文件，并给相关变量填上相应的值,如果不确定可登陆aliyun相应管理控制台查看或在服务器上请求该地址查询`curl --retry 5 -sSL http://100.100.100.200/latest/meta-data/{{META_ID}}`。
+Then, modify the `aliyun-controller.yml` file under `roles/addons/kubeup` under this project, and fill in the relevant values with the relevant variables. If are not sure, log in to aliyun to view the corresponding management console, or request the address on the server to query `curl --retry 5 -sSL http://100.100.100.200/latest/meta-data/{{META_ID}}`.
 
-`--cluster-cidr`: pod的ip段
+`--cluster-cidr`: IP section of pod
 
-`ALIYUN_ACCESS_KEY`: 阿里云的API访问key
+`ALIYUN_ACCESS_KEY`: The API Access Key of Alibaba Cloud
 
-`ALIYUN_ACCESS_KEY_SECRET`: 阿里云的API访问秘钥
+`ALIYUN_ACCESS_KEY_SECRET`: The API Access Key of Alibaba Cloud
 
-`ALIYUN_ZONE`: 云服务器ECS所在可用区id
+`ALIYUN_ZONE`: Availability id of cloud server ECS
 
-`ALIYUN_ROUTER`: 专有网络vpc的路由id
+`ALIYUN_ROUTER`: Private network vpc routing id
 
-`ALIYUN_ROUTE_TABLE`: 专有网络vpc的路由表id
+`ALIYUN_ROUTE_TABLE`: Private network vpc routing id
 
-`ALIYUN_REGION`: 云服务器ECS所在区域id
+`ALIYUN_REGION`: Availability id of cloud server ECS
 
-`ALIYUN_VPC`: 专有网络vpc的id
+`ALIYUN_VPC`: Private network vpc routing id
 
-`ALIYUN_VSWITCH`: 专有网络vpc的交换机id
+`ALIYUN_VSWITCH`: The switch id of private network vpc
 
 
-填好变量后，将改上边文件拷贝到所有master节点的`/etc/kubernetes/manifests/`下。
+After filling in the variables, copy the above file to `/etc/kubernetes/manifests/` of all master nodes.
 
-该ACCESS_KEY的用户需要拥有以下权限：
+The ACCESS_KEY user has the following permissions:
 
-- 只读访问云服务器(ECS)的权限
-- 管理专有网络(VPC)的权限
+- Read-only access to cloud server (ECS) permissions
+- Manage Permissions for a Private Network (VPC)
 
-编辑所有master节点下的`/etc/kubernetes/manifests/kube-controller-manager.yaml`文件。在command命令中添加如下两个命令和环境变量:
+Edit the `/etc/kubernetes/manifests/kube-controller-manager.yaml` file under all master nodes. Add the following two commands and environment variables in the command command:
 
 command:
 
@@ -364,7 +370,7 @@ command:
 --configure-cloud-routes=false
 ```
 
-环境变量:
+Environment variables:
 
 ```
 env:
@@ -374,22 +380,21 @@ env:
   value: [YOUR_ALIYUN_ACCESS_KEY_SECRET]
 ```
 
-重启所有master节点的kubelet:
+Restart all the kubelets of the master node:
 
 ```
 systemctl restart kubelet
 ```
 
-检查kube-controller是否健康:
-
+Check if the kube-controller is healthy:
 ```
 kubectl get po -n kube-system | grep aliyun-controller
 ```
 
-绑定云盘示例,每个云盘只能绑定一次：
+Bind the examples of cloud disk , each cloud disk can only be bound once:
 
 ```
-# 使用pv绑定,diskId为云盘的id
+# Using pv binding, diskId is the id of the cloud disk
 kind: PersistentVolume
 apiVersion: v1
 metadata:
@@ -407,7 +412,7 @@ spec:
     options:
       diskId: "d-bp1i23j39i30if"
 
-# pod直接绑定
+# Directly bind pod
 
 apiVersion: v1
 kind: Pod
@@ -431,4 +436,9 @@ spec:
         diskId: "d-1ierokwer8234jowe"
 ```
 
+## Reporting issues
 
+If you find any shortcomings or bugs, please describe them in the [issue](https://github.com/choerodon/choerodon/issues/new?template=issue_template.md).
+
+## How to contribute
+Pull requests are welcome! Follow [this link](https://github.com/choerodon/choerodon/blob/master/CONTRIBUTING.md) for more information on how to contribute.
