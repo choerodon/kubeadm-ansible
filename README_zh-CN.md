@@ -431,4 +431,7 @@ spec:
         diskId: "d-1ierokwer8234jowe"
 ```
 
+## 8. 升级集群
 
+- **集群更新存在一定风险，请谨慎操作**
+- 使用命令：`ansible-playbook -i inventory/hosts upgrade-to-1.9.9.yml`
