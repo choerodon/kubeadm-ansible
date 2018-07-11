@@ -112,7 +112,7 @@
   - kube-master
   - kube-node
   tasks:
-  - name: Ensure Yum repository
+  - name: Ensure yum repository
     become: yes
     yum_repository:
       name: kubernetes
@@ -169,3 +169,6 @@
       name: kubelet
       state: restarted
       enabled: yes
+  #Issues https://github.com/kubernetes/kubernetes/issues/21613
+  - name: Ensure KubeDNS is working
+    shell: echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables
