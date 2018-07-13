@@ -1,10 +1,32 @@
 --- 
+- name: Ensure yum-utils
+  become: yes
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "epel-release"
+    - "yum-utils"
+    - "device-mapper-persistent-data"
+    - "lvm2"
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
+  tags:
+    - docker
+
+- name: Ensure docker-ce repo
+  command: yum-config-manager --add-repo {{aliyun_docker_yum_repo}} && yum makecache fast
+  tags:
+  - docker
+
 - name: Ensure docker-engine
   become: yes
   yum:
     name: "{{ item }}"
     state: present
-    enablerepo: "k8s"
+    enablerepo: "docker-ce-stable"
   with_items:
     - "{{docker_version_name}}"
   environment:

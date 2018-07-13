@@ -1,7 +1,5 @@
 # 默认参数定义在roles/base/variables/default/main.yml,如果要修改,可在本文件中覆盖
-
-# 暂时只支持v1.7.0、v1.8.1、v1.8.5
-kube_version: "v1.8.5"
+# 暂时只支持v1.9.9
 
 # 请指定iPv4网卡名称
 k8s_interface: "enp0s8"
