@@ -45,30 +45,30 @@
 - name: Ensure Yum repository
   become: yes
   yum_repository:
-    name: k8s
-    description: K8s Repository
-    baseurl: "{{k8s_yum_repo}}"
-    enabled: yes
+    name: kubernetes
+    description: kubernetes Repository
+    baseurl: "{{aliyun_k8s_yum_repo}}"
+    enabled: no
     gpgcheck: no
     state: present
 
 - name: Download cfssl
   get_url:
-    url: "{{k8s_yum_repo}}/cfssl/cfssl_linux-amd64"
+    url: "{{nginx_file_service}}/cfssl/cfssl_linux-amd64"
     dest: /usr/local/bin/cfssl
     mode: 0755
   when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
 
 - name: Download cfssljson
   get_url:
-    url: "{{k8s_yum_repo}}/cfssl/cfssljson_linux-amd64"
+    url: "{{nginx_file_service}}/cfssl/cfssljson_linux-amd64"
     dest: /usr/local/bin/cfssljson
     mode: 0755
   when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
 
 - name: Download cfssl-certinfo
   get_url:
-    url: "{{k8s_yum_repo}}/cfssl/cfssl-certinfo_linux-amd64"
+    url: "{{nginx_file_service}}/cfssl/cfssl-certinfo_linux-amd64"
     dest: /usr/local/bin/cfssl-certinfo
     mode: 0755
   when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique

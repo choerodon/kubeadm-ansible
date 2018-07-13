@@ -19,6 +19,15 @@ kube_apiserver_insecure_endpoint: >-
 
 # Admission control plug-ins
 kube_apiserver_admission_control:
+  v1.9.9:
+  - Initializers
+  - NamespaceLifecycle
+  - LimitRanger
+  - ServiceAccount
+  - DefaultStorageClass
+  - ValidatingAdmissionWebhook
+  - ResourceQuota
+  v1.8.5:
   - Initializers
   - NamespaceLifecycle
   - LimitRanger
@@ -26,6 +35,22 @@ kube_apiserver_admission_control:
   - DefaultStorageClass
   - GenericAdmissionWebhook
   - ResourceQuota
+  v1.8.1:
+  - Initializers
+  - NamespaceLifecycle
+  - LimitRanger
+  - ServiceAccount
+  - DefaultStorageClass
+  - GenericAdmissionWebhook
+  - ResourceQuota
+  v1.7.0:
+  - NamespaceLifecycle
+  - LimitRanger
+  - ServiceAccount
+  - PersistentVolumeLabel
+  - DefaultStorageClass
+  - ResourceQuota
+  - DefaultTolerationSeconds
 
 kube_apiserver_count: "{{ groups['kube-master'] | length }}"
 

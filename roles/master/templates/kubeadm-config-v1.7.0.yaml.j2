@@ -22,7 +22,7 @@ tokenTTL: "{{ kubeadm_token_ttl }}"
 apiServerExtraArgs:
   insecure-bind-address: {{ kube_apiserver_insecure_bind_address }}
   insecure-port: "{{ kube_apiserver_insecure_port }}"
-  admission-control: NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds
+  admission-control: {{ kube_apiserver_admission_control[kube_version | string] | join(',') }}
   apiserver-count: "{{ kube_apiserver_count }}"
   service-node-port-range: {{ kube_apiserver_node_port_range }}
   storage-backend: {{ kube_apiserver_storage_backend }}

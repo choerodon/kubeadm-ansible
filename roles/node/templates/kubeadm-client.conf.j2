@@ -5,3 +5,4 @@ caCertPath: /etc/kubernetes/pki/ca.crt
 token: {{ kubeadm_token }}
 discoveryTokenAPIServers:
 - {{ first_kube_master_endpoint | replace("https://", "")}}
+discoveryTokenUnsafeSkipCAVerification: true

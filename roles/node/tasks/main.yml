@@ -33,7 +33,7 @@
 - name: Join to cluster if needed
   environment:
     - KUBE_REPO_PREFIX: "{{kube_image_repo}}"
-  command: "kubeadm join --config /etc/kubernetes/kubeadm-client.conf --skip-preflight-checks"
+  command: "kubeadm join --config /etc/kubernetes/kubeadm-client.conf --ignore-preflight-errors=all"
   register: kubeadm_join
   when: not is_kube_master and (kubeadm_client_conf.changed or not kubelet_conf.stat.exists)
 
