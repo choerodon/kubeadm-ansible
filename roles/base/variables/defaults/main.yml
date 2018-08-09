@@ -94,7 +94,7 @@ nginx_image_tag: "1.11.4-alpine"
 
 # ================================= yum 源 =================================
 
-k8s_yum_repo: "http://file.choerodon.com.cn/kubernetes/"
+k8s_yum_repo: "https://file.choerodon.com.cn/kubernetes"
 
 docker_version_name: "docker-engine-17.05.0.ce-1.el7.centos"
 
