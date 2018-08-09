@@ -91,7 +91,7 @@ nginx_image_tag: "1.11.4-alpine"
 
 # ================================= yum 源 =================================
 
-nginx_file_service: "http://file.choerodon.com.cn/kubernetes/"
+nginx_file_service: "https://file.choerodon.com.cn/kubernetes"
 
 aliyun_k8s_yum_repo: "https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64"
 
