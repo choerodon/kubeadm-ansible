@@ -1,7 +1,11 @@
+# General
+.vagrant/
+.DS_Store
+
+# Log files (if you are creating logs in debug mode, uncomment this)
+# *.logs
+
+*.retry
 credentials/
-cluster.retry
 roles/debug
 debug.yml
-.DS_Store
-.vagrant
-debug.retry
