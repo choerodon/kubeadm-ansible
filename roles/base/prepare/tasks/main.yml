@@ -58,6 +58,10 @@
     dest: /usr/local/bin/cfssl
     mode: 0755
   when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
 
 - name: Download cfssljson
   get_url:
@@ -65,6 +69,10 @@
     dest: /usr/local/bin/cfssljson
     mode: 0755
   when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
 
 - name: Download cfssl-certinfo
   get_url:
@@ -72,5 +80,7 @@
     dest: /usr/local/bin/cfssl-certinfo
     mode: 0755
   when: inventory_hostname in (groups['kube-master'] + groups['etcd']|default([]))|unique
-
-
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
