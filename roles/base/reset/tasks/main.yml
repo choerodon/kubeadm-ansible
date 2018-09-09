@@ -34,7 +34,7 @@
   with_items:
     - kubeadm
     - kubectl
-    - kubelt
+    - kubelet
     - kubernetes-cni
 
 - name: reset | remove services
