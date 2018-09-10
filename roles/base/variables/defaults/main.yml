@@ -72,10 +72,7 @@ dashboard_image_repo: "{{kube_image_repo}}/kubernetes-dashboard-amd64"
 dashboard_image_tag: "v1.7.1"
 
 flannel_image_repo: "{{image_repo}}/flannel"
-flannel_image_tag: "v0.9.0"
-
-flannel_cni_image_repo: "{{image_repo}}/flannel-cni"
-flannel_cni_image_tag: "v0.3.0"
+flannel_image_tag: "v0.10.0-amd64"
 
 nginx_ingress_controller_image_repo: "{{image_repo}}/nginx-ingress-controller"
 nginx_ingress_controller_image_tag: "0.9.0-beta.17"
