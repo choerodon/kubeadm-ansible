@@ -10,20 +10,19 @@ metadata:
 data:
   cni-conf.json: |
     {
-      "name":"cni0",
-      "cniVersion":"0.3.1",
-      "plugins":[
+      "name": "cni0",
+      "plugins": [
         {
-          "type":"flannel",
-          "delegate":{
-            "forceAddress":true,
-            "isDefaultGateway":true
+          "type": "flannel",
+          "delegate": {
+            "hairpinMode": true,
+            "isDefaultGateway": true
           }
         },
         {
-          "type":"portmap",
-          "capabilities":{
-            "portMappings":true
+          "type": "portmap",
+          "capabilities": {
+            "portMappings": true
           }
         }
       ]
@@ -51,19 +50,44 @@ spec:
         tier: node
         k8s-app: flannel
     spec:
+      hostNetwork: true
+      nodeSelector:
+        beta.kubernetes.io/arch: amd64
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
       serviceAccountName: flannel
+      initContainers:
+      - name: install-cni
+        image: {{ flannel_image_repo }}:{{ flannel_image_tag }}
+        command:
+        - cp
+        args:
+        - -f
+        - /etc/kube-flannel/cni-conf.json
+        - /etc/cni/net.d/10-flannel.conflist
+        volumeMounts:
+        - name: cni
+          mountPath: /etc/cni/net.d
+        - name: flannel-cfg
+          mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
         image: {{ flannel_image_repo }}:{{ flannel_image_tag }}
-        imagePullPolicy: IfNotPresent
+        command:
+        - /opt/bin/flanneld
+        args:
+        - --ip-masq
+        - --kube-subnet-mgr
+        - --iface=$(POD_IP)
         resources:
-          limits:
-            cpu: {{ flannel_cpu_limit }}
-            memory: {{ flannel_memory_limit }}
           requests:
             cpu: {{ flannel_cpu_requests }}
             memory: {{ flannel_memory_requests }}
-        command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr", "--iface=$(POD_IP)" ]
+          limits:
+            cpu: {{ flannel_cpu_limit }}
+            memory: {{ flannel_memory_limit }}
         securityContext:
           privileged: true
         env:
@@ -82,32 +106,8 @@ spec:
         volumeMounts:
         - name: run
           mountPath: /run
-        - name: cni
-          mountPath: /etc/cni/net.d
         - name: flannel-cfg
           mountPath: /etc/kube-flannel/
-      - name: install-cni
-        image: {{ flannel_cni_image_repo }}:{{ flannel_cni_image_tag }}
-        command: ["/install-cni.sh"]
-        env:
-        # The CNI network config to install on each node.
-        - name: CNI_NETWORK_CONFIG
-          valueFrom:
-            configMapKeyRef:
-              name: kube-flannel-cfg
-              key: cni-conf.json
-        - name: CNI_CONF_NAME
-          value: "10-flannel.conflist"
-        volumeMounts:
-        - name: cni
-          mountPath: /host/etc/cni/net.d
-        - name: host-cni-bin
-          mountPath: /host/opt/cni/bin/
-      hostNetwork: true
-      tolerations:
-      - key: node-role.kubernetes.io/master
-        operator: Exists
-        effect: NoSchedule
       volumes:
         - name: run
           hostPath:
@@ -118,10 +118,3 @@ spec:
         - name: flannel-cfg
           configMap:
             name: kube-flannel-cfg
-        - name: host-cni-bin
-          hostPath:
-            path: /opt/cni/bin
-  updateStrategy:
-    rollingUpdate:
-      maxUnavailable: {{ serial | default('20%') }}
-    type: RollingUpdate
