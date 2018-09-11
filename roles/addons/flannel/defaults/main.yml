@@ -7,4 +7,4 @@ flannel_cpu_limit: 300m
 flannel_memory_requests: 64M
 flannel_cpu_requests: 150m
 
-#flannel_interface: "enp0s8"
+flannel_iface: true

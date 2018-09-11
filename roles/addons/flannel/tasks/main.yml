@@ -32,6 +32,4 @@
 
 - name: "Flannel | Start Resources"
   command: "kubectl apply -f /etc/kubernetes/addons/flannel/cni-flannel.yml -n kube-system"
-  when: inventory_hostname == groups['kube-master'][0] and flannel_rbac_manifest.changed and flannel_enable | default(true)
-
-
+  when: inventory_hostname == groups['kube-master'][0] and flannel_manifest.changed and flannel_enable | default(true)
