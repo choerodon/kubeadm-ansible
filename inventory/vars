@@ -1,9 +1,6 @@
 # 默认参数定义在roles/base/variables/default/main.yml,如果要修改,可在本文件中覆盖
 # 暂时只支持v1.9.9
 
-# 请指定iPv4网卡名称
-k8s_interface: "enp0s8"
-
 # pod的ip范围
 kube_pods_subnet: 10.233.64.0/18
 
