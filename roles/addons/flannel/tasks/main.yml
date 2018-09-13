@@ -25,6 +25,13 @@
   register: flannel_manifest
   when: inventory_hostname == groups['kube-master'][0]
 
+# Download portmap because kubernetes-cni does not include but flannel needs
+- name: download portmap
+  get_url:
+    url: "{{k8s_yum_repo}}/tools/portmap-1.9.1"
+    dest: /opt/cni/bin/portmap
+    mode: 0755 
+
 - name: "Flannel | Create ServiceAccount ClusterRole and ClusterRoleBinding"
   command: "kubectl apply -f /etc/kubernetes/addons/flannel/cni-flannel-rbac.yml"
   run_once: true
