@@ -28,7 +28,6 @@
     - "/etc/kubernetes/manifests"
     - "/etc/kubernetes/ssl/etcd"
 
-
 - name: Create cni directories
   file:
     path: "{{ item }}"
@@ -41,6 +40,13 @@
     - inventory_hostname in (groups['kube-master'] + groups['kube-node']+ groups['etcd']|default([]))|unique
   tags:
     - network
+
+# Download portmap because kubernetes-cni does not include but flannel needs
+- name: download portmap
+  get_url:
+    url: "{{k8s_yum_repo}}/tools/portmap-1.9.1"
+    dest: /opt/cni/bin/portmap
+    mode: 0755 
 
 - name: Ensure Yum repository
   become: yes
