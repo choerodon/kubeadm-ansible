@@ -88,6 +88,10 @@
   tags:
     - iptables
 
+- name: cleanup networks
+  shell: "ip link del flannel.1; ip link del cni0;"
+  ignore_errors: true
+
 - name: reset | delete some files and directories
   file:
     path: "{{ item }}"
@@ -105,8 +109,8 @@
     - /etc/nginx
     - /opt/cni
     - /var/log/pods
-    - "/usr/local/bin/etcd"
-    - "/usr/local/bin/etcdctl"
+    - /usr/local/bin/etcd
+    - /usr/local/bin/etcdctl
     - /usr/local/bin/cfssl
     - /usr/local/bin/cfssljson
     - /usr/local/bin/cfssl-certinfo
@@ -127,7 +131,10 @@
 
 - name: reset | Restart network
   service:
-    name: network
+    name: "{{item}}"
     state: restarted
+  with_items:
+    - networking
+    - network
   tags:
     - network
