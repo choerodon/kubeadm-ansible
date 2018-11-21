@@ -8,7 +8,7 @@
 {% endif %}
     "log-level": "warn",
     "log-driver": "json-file",
-    "graph": "{{ docker_storage_dir }}",
+    "data-root": "{{ docker_storage_dir }}",
     "log-opts": {
       "max-size": "10m",
       "max-file": "3"
