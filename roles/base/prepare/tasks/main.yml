@@ -28,7 +28,6 @@
     - "/etc/kubernetes/manifests"
     - "/etc/kubernetes/ssl/etcd"
 
-
 - name: Create cni directories
   file:
     path: "{{ item }}"
@@ -62,7 +61,7 @@
     http_proxy: "{{ http_proxy| default ('') }}"
     https_proxy: "{{ https_proxy| default ('') }}"
     no_proxy: "{{ no_proxy| default ('') }}"
-
+    
 - name: Download cfssljson
   get_url:
     url: "{{nginx_file_service}}/cfssl/cfssljson_linux-amd64"

@@ -1,16 +1,4 @@
 ---
-# - name: Ensure Kubernetes YUM repository
-#   become: yes
-#   yum_repository:
-#     name: k8s
-#     description: Kubernetes YUM repository
-#     baseurl: "{{k8s_yum_repo}}"
-#     enabled: yes
-#     gpgcheck: no
-#     state: present
-#   tags:
-#     - k8s
-
 - name: Ensure Base Kubernetes
   become: yes
   yum:
