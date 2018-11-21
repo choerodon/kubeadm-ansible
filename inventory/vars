@@ -7,5 +7,11 @@ kube_pods_subnet: 10.233.64.0/18
 # service的ip范围
 kube_service_addresses: 10.233.0.0/18
 
+# kubelet根目录
+kube_storage_dir: "/var/lib/kubelet"
+
+# docker根目录
+docker_storage_dir: "/var/lib/docker"
+
 # kube-lego组件邮箱
 kube_lego_email: example@choerodon.io

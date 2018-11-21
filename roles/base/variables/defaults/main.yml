@@ -16,6 +16,8 @@ kube_apiserver_port: 6443
 
 kube_cadvisor_port: 4194
 
+kube_storage_dir: "/var/lib/kubelet"
+
 # kube-dns service ip
 kube_dns_server: "{{ kube_service_addresses|ipaddr(10)|ipaddr('address') }}"
 
@@ -120,3 +122,4 @@ kube_lego_enable: true
 
 insecure_registries:
   - "{{ kube_service_addresses }}"
+docker_storage_dir: "/var/lib/docker"
