@@ -1,5 +1,12 @@
 ---
 
+##We still have to gather facts about our masters and etcd nodes
+- hosts: kube-master:kube-node:etcd
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  vars:
+    ansible_ssh_pipelining: true
+  gather_facts: true
+
 - hosts: kube-node
   any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
   roles:
