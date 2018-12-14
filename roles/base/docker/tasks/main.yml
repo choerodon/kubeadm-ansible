@@ -67,7 +67,7 @@
   command: systemctl daemon-reload
   when: docker_proxy_enable and proxy_result.changed | default(false)
 
-
+  
 - name: restart docker
   service:
     name: docker
