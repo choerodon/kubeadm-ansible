@@ -13,8 +13,26 @@
     - k8s
     - preinstall
 
-- selinux:
-    state: disabled
+- name: Temporarily closed selinux
+  shell: "setenforce 0"
+  failed_when: false
+
+- name: Permanent closure selinux
+  lineinfile:
+    dest: /etc/selinux/config
+    regexp: "^SELINUX="
+    line: "SELINUX=disabled"
+
+- name: Disable swap
+  shell: "swapoff -a && sysctl -w vm.swappiness=0"
+  ignore_errors: true
+
+- name: Delete fstab swap config
+  lineinfile:
+    path: /etc/fstab
+    regexp: 'swap'
+    state: absent
+    backup: 'yes'
 
 - name: Check presence of fastestmirror.conf
   stat:

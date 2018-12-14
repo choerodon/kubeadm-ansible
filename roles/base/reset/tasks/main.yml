@@ -1,31 +1,41 @@
 ---
 - name: reset | kubeadm reset
   command: kubeadm reset
-  failed_when: false
-  tags:
-    - kubeadm
+  ignore_errors: true
 
-- name: reset | stop services
+- name: reset | stop and disable services
   service:
     name: "{{ item }}"
     state: stopped
-  with_items:
-    - kubelet
-    - etcd
-  failed_when: false
-  tags:
-    - services
-
-- name: reset | disable services
-  service:
-    name: "{{ item }}"
     enabled: no
   with_items:
     - kubelet
     - etcd
-  failed_when: false
-  tags:
-    - services
+    - docker
+  ignore_errors: true
+
+- name: reset | remove services
+  file:
+    path: "/etc/systemd/system/{{ item }}.service"
+    state: absent
+  with_items:
+    - etcd
+
+# - name: reset | gather mounted kubelet dirs
+#   shell: mount | grep /var/lib/kubelet | awk '{print $3}'
+#   check_mode: no
+#   register: mounted_dirs
+#   tags:
+#     - mounts
+
+# - name: reset | unmount kubelet dirs
+#   command: umount {{item}}
+#   with_items: '{{ mounted_dirs.stdout_lines }}'
+#   tags:
+#     - mounts
+
+- name: unmount kubelet filesystem
+  mount: path=/var/run/kubelet state=unmounted
 
 - name: reset | uninstall package
   yum:
@@ -36,16 +46,7 @@
     - kubectl
     - kubelet
     - kubernetes-cni
-
-- name: reset | remove services
-  file:
-    path: "/etc/systemd/system/{{ item }}.service"
-    state: absent
-  with_items:
-    - kubelet
-    - etcd
-  tags:
-    - services
+    - docker-engine
 
 - name: reset | systemctl daemon-reload
   command: systemctl daemon-reload
@@ -53,40 +54,10 @@
 - name: reset | systemctl reset-failed
   command: systemctl reset-failed
 
-- name: reset | remove all containers
-  shell: "docker ps -aq | xargs -r docker rm -fv"
-  register: remove_all_containers
-  retries: 4
-  until: remove_all_containers.rc == 0
-  delay: 5
-  tags:
-    - docker
-
-- name: reset | restart docker
-  service:
-    name: docker
-    state: restarted
-  tags:
-    - docker
-
-- name: reset | gather mounted kubelet dirs
-  shell: mount | grep /var/lib/kubelet | awk '{print $3}' | tac
-  check_mode: no
-  register: mounted_dirs
-  tags:
-    - mounts
-
-- name: reset | unmount kubelet dirs
-  command: umount {{item}}
-  with_items: '{{ mounted_dirs.stdout_lines }}'
-  tags:
-    - mounts
-
 - name: flush iptables
   iptables:
     flush: yes
-  tags:
-    - iptables
+  ignore_errors: true
 
 - name: cleanup networks
   shell: "ip link del flannel.1; ip link del cni0;"
@@ -99,8 +70,11 @@
   with_items:
     - /etc/kubernetes
     - /etc/systemd/system/kubelet.service.d
+    - /etc/systemd/system/docker.service.d
+    - /etc/docker
     - /etc/yum.repos.d/k8s.repo
     - /var/lib/kubelet
+    - /var/lib/docker
     - /root/.kube
     - /var/lib/etcd
     - /etc/ssl/etcd
@@ -117,24 +91,21 @@
     - /run/xtables.lock
     - /run/flannel
     - /run/kubernetes
-  tags:
-    - files
-
-- name: reset | remove host entries from /etc/hosts
-  blockinfile:
-    dest: "/etc/hosts"
-    state: absent
-    follow: yes
-    marker: "# Ansible inventory hosts {mark}"
-  tags:
-    - dns
 
 - name: reset | Restart network
   service:
     name: "{{item}}"
     state: restarted
   with_items:
+    - network
     - networking
-    - network
-  tags:
-    - network
+  args:
+    warn: false
+  ignore_errors: true
+
+- name: reset | remove host entries from /etc/hosts
+  blockinfile:
+    path: "/etc/hosts"
+    state: absent
+    follow: yes
+    marker: "# Ansible inventory hosts {mark}"
