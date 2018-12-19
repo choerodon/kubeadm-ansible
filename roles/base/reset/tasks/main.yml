@@ -46,7 +46,7 @@
     - kubectl
     - kubelet
     - kubernetes-cni
-    - docker-engine
+    - docker-ce
 
 - name: reset | systemctl daemon-reload
   command: systemctl daemon-reload
