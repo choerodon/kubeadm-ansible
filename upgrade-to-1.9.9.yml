@@ -139,20 +139,20 @@
   - name: Upgrade Kubernetes
     shell: 'kubeadm upgrade apply v1.9.9 --config=/etc/kubernetes/kubeadm-config.yaml -f'
 
-# 更新docker配置
-- hosts:
-  - kube-master
-  tasks:
-  - name: Upgrade docker configfile
-    ignore_errors: yes
-    shell: >-
-      jq '.["registry-mirrors"]|= .+["https://registry.docker-cn.com"]' /etc/docker/daemon.json > /tmp/docker-daemon.json && \
-      cp -f /tmp/docker-daemon.json /etc/docker/daemon.json
-  - name: remove old etcd_back
-    ignore_errors: yes
-    file: 
-      path: /tmp/docker-daemon.json
-      state: absent
+# # 更新docker配置
+# - hosts:
+#   - kube-master
+#   tasks:
+#   - name: Upgrade docker configfile
+#     ignore_errors: yes
+#     shell: >-
+#       jq '.["registry-mirrors"]|= .+["https://registry.docker-cn.com"]' /etc/docker/daemon.json > /tmp/docker-daemon.json && \
+#       cp -f /tmp/docker-daemon.json /etc/docker/daemon.json
+#   - name: remove old etcd_back
+#     ignore_errors: yes
+#     file: 
+#       path: /tmp/docker-daemon.json
+#       state: absent
 
 # 重启docker kubelet
 - hosts: all
