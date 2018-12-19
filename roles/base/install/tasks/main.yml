@@ -36,14 +36,14 @@
   with_items:
     - kubelet
 
-
-- name: Ensure jq package is installed
+- name: Ensure jq nfs-utils package is installed
   become: yes
   yum:
     name: "{{ item }}"
     state: latest
   with_items:
     - jq
+    - nfs-utils
     - bash-completion
   environment:
     http_proxy: "{{ http_proxy| default ('') }}"
