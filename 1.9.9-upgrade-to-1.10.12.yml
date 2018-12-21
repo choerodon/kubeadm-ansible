@@ -1,5 +1,5 @@
 # 集群更新存在一定风险，请谨慎操作
-# 使用命令：ansible-playbook -i inventory/hosts upgrade-to-1.9.9.yml
+# 使用命令：ansible-playbook -i inventory/hosts 1.9.9-upgrade-to-1.10.12.yml
 
 - hosts: all
   vars_prompt:
@@ -36,44 +36,6 @@
         --key /etc/ssl/etcd/ssl/client-key.pem \
         snapshot save {{ etcd_back_path.stdout }}
 
-# 升级etcd
-- hosts:
-  - etcd
-  tasks:
-  - name: Upgrade etcdctl
-    shell: >-
-      docker run --rm --entrypoint cat registry.cn-hangzhou.aliyuncs.com/choerodon-tools/etcd:v3.3.6 \
-      /usr/local/bin/etcdctl > /usr/local/bin/etcdctl && \
-      chmod +x /usr/local/bin/etcdctl
-    register: etcd_task_result
-    until: etcd_task_result.rc == 0
-    retries: 3
-    delay: 300
-    changed_when: false
-  - name: Edit etcd configfile
-    shell: sed -i 's/v3.2.4/v3.3.6/g' /usr/local/bin/etcd
-  - name: reload systemd
-    shell: systemctl daemon-reload
-  - name: Ensure etcd service is started and enabled
-    service:
-      name: etcd
-      enabled: yes
-      state: restarted
-  - name: Check if cluster is healthy
-    shell: >-
-      /usr/local/bin/etcdctl \
-      --ca-file /etc/ssl/etcd/ssl/ca.pem \
-      --cert-file /etc/ssl/etcd/ssl/client.pem \
-      --key-file /etc/ssl/etcd/ssl/client-key.pem \
-      --peers https://127.0.0.1:2379 cluster-health | grep -q 'cluster is healthy'
-    register: etcd_cluster_is_healthy
-    ignore_errors: true
-    changed_when: false
-    check_mode: no
-    until: etcd_cluster_is_healthy.rc == 0
-    retries: 10
-    delay: 5
-
 # 备份各节点配置文件
 - hosts:
   - kube-master
@@ -104,9 +66,10 @@
   tasks:
   - name: Edit master Kubernetes configfile
     shell: >-
-      sed -i 's/kubernetesVersion.*$/kubernetesVersion\:\ v1.9.9/g' /etc/kubernetes/kubeadm-config.yaml \
-      && sed -i 's/GenericAdmissionWebhook/ValidatingAdmissionWebhook/g' /etc/kubernetes/kubeadm-config.yaml
-
+      sed -i 's/kubernetesVersion.*$/kubernetesVersion\:\ v1.10.12/g' /etc/kubernetes/kubeadm-config.yaml \
+      && sed -i 's/GenericAdmissionWebhook/ValidatingAdmissionWebhook/g' /etc/kubernetes/kubeadm-config.yaml \
+      && sed -i 's/imageRepository.*$/imageRepository\:\ registry.cn-hangzhou.aliyuncs.com\/google_containers/g' /etc/kubernetes/kubeadm-config.yaml
+      
 # 更新yum包
 - hosts:
   - kube-master
@@ -128,42 +91,22 @@
       name: "{{ item }}"
       state: present
     with_items:
-    - kubeadm-1.9.9-0.x86_64
-    - kubectl-1.9.9-0.x86_64
-    - kubelet-1.9.9-0.x86_64
+    - kubeadm-1.10.12-0.x86_64
+    - kubectl-1.10.12-0.x86_64
+    - kubelet-1.10.12-0.x86_64
 
 # 正式升级
 - hosts:
   - kube-master
   tasks:
   - name: Upgrade Kubernetes
-    shell: 'kubeadm upgrade apply v1.9.9 --config=/etc/kubernetes/kubeadm-config.yaml -f'
-
-# # 更新docker配置
-# - hosts:
-#   - kube-master
-#   tasks:
-#   - name: Upgrade docker configfile
-#     ignore_errors: yes
-#     shell: >-
-#       jq '.["registry-mirrors"]|= .+["https://registry.docker-cn.com"]' /etc/docker/daemon.json > /tmp/docker-daemon.json && \
-#       cp -f /tmp/docker-daemon.json /etc/docker/daemon.json
-#   - name: remove old etcd_back
-#     ignore_errors: yes
-#     file: 
-#       path: /tmp/docker-daemon.json
-#       state: absent
+    shell: 'kubeadm upgrade apply v1.10.12 --config=/etc/kubernetes/kubeadm-config.yaml -f'
 
 # 重启docker kubelet
 - hosts: all
   tasks:
   - name: reload systemd
     shell: systemctl daemon-reload
-  - name: restart docker
-    service:
-      name: docker
-      state: restarted
-      enabled: yes
   - name: restart kubelet
     service:
       name: kubelet
