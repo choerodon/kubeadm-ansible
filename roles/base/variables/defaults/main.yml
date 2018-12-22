@@ -62,7 +62,7 @@ image_repo: "registry.cn-hangzhou.aliyuncs.com/choerodon-tools"
 kube_image_repo: "{{image_repo}}"
 
 pause_amd_image_repo: "{{kube_image_repo}}/pause-amd64"
-pause_amd_image_tag: "3.0"
+pause_amd_image_tag: "3.1"
 
 etcd_image_repo: "{{ image_repo }}/etcd"
 etcd_image_tag: "v3.3.6"
