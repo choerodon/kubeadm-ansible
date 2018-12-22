@@ -19,6 +19,14 @@ kube_apiserver_insecure_endpoint: >-
 
 # Admission control plug-ins
 kube_apiserver_admission_control:
+  v1.10.12:
+  - Initializers
+  - NamespaceLifecycle
+  - LimitRanger
+  - ServiceAccount
+  - DefaultStorageClass
+  - ValidatingAdmissionWebhook
+  - ResourceQuota
   v1.9.9:
   - Initializers
   - NamespaceLifecycle
