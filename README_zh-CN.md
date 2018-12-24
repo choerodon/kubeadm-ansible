@@ -428,4 +428,4 @@ spec:
 ## 8. 升级集群
 
 - **集群更新存在一定风险，请谨慎操作**
-- 使用命令：`ansible-playbook -i inventory/hosts 1.8.5-upgrade-to-1.9.9.yml`
+- 升级至1.10.12版本：`ansible-playbook -i inventory/hosts 1.9.9-upgrade-to-1.10.12.yml`
