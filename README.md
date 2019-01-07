@@ -434,4 +434,5 @@ Pull requests are welcome! Follow [this link](https://github.com/choerodon/choer
 ## 8. Upgrading the cluster
 
 - **There are certain risks in cluster update. Please be cautious.**
-- Use command：`ansible-playbook -i inventory/hosts upgrade-to-1.9.9.yml`
+- Use command upgrade to 1.9.9 version：`ansible-playbook -i inventory/hosts 1.8.5-upgrade-to-1.9.9.yml`
+- Use command upgrade to 1.10.12 version：`ansible-playbook -i inventory/hosts 1.9.9-upgrade-to-1.10.12.yml`

@@ -427,5 +427,8 @@ spec:
 
 ## 8. 升级集群
 
+> 由于使用kubeadm限制，不能跨次版本号进行升级，故需升级至1.10.12版本Kubernetes请先升级集群至1.9.9版本。
+
 - **集群更新存在一定风险，请谨慎操作**
-- 使用命令：`ansible-playbook -i inventory/hosts upgrade-to-1.9.9.yml`
+- 升级至1.9.9版本：`ansible-playbook -i inventory/hosts 1.8.5-upgrade-to-1.9.9.yml`
+- 升级至1.10.12版本：`ansible-playbook -i inventory/hosts 1.9.9-upgrade-to-1.10.12.yml`
