@@ -38,4 +38,7 @@ openssl req -new -key front-proxy-client.key -out front-proxy-client.csr -subj "
 
 openssl x509 -req -in front-proxy-client.csr  -CA front-proxy-ca.crt -CAkey front-proxy-ca.key -CAcreateserial -out front-proxy-client.crt -days {{kube_certs_time}} -extensions v3_req -extfile /etc/kubernetes/openssl-config/openssl-client.cnf
 
-
+# 6.  admin
+openssl genrsa -out admin.key 2048
+openssl req -new -key admin.key -subj "/CN=kubernetes-admin/O=system:masters" -out admin.csr
+openssl x509 -req -CA ca.crt -CAkey ca.key -days {{ kube_certs_time }}  -in admin.csr -CAcreateserial  -extensions v3_req_client -extfile kube-openssl.cnf -out admin.crt
