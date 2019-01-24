@@ -9,10 +9,10 @@ Kubeadmin ansible is a toolkit for simple and quick installing k8s cluster.
 Install the ansible run environment on the machine where the ansible script is to be executed:
 
 ```
-sudo yum install epel-release -y && sudo yum update -y
-sudo yum install git python sshpass python-pip -y
-sudo pip install pip --upgrade
-sudo pip install ansible==2.7.5 netaddr
+sudo yum install epel-release -y 
+sudo yum install git python36 sshpass -y
+sudo python3.6 -m ensurepip
+sudo /usr/local/bin/pip3 install --no-cache-dir ansible==2.7.5 netaddr
 ```
 
 Clone project：
