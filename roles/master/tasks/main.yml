@@ -10,6 +10,10 @@
 - name: Include kubeadm
   include: kubeadm-setup.yml
 
+- name: Include config certs
+  include: configfile.yml
+  when: not kubeadm_ca.stat.exists
+
 - name: Create kube config dir
   file:
     path: "/root/.kube"
