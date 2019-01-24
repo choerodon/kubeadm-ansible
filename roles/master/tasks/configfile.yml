@@ -1,0 +1,83 @@
+- name: create admin.conf 
+  shell: >
+    cd /etc/kubernetes/pki/ &&
+    kubectl config set-cluster kubernetes 
+    --certificate-authority=ca.crt 
+    --embed-certs=true 
+    --server=https://{{ ansible_host | trim }}:{{ kube_apiserver_port | trim }} 
+    --kubeconfig=/etc/kubernetes/admin.conf &&
+    kubectl config set-credentials kubernetes-admin
+    --client-certificate=admin.crt
+    --client-key=admin.key 
+    --embed-certs=true 
+    --kubeconfig=/etc/kubernetes/admin.conf &&
+    kubectl config set-context kubernetes-admin@kubernetes 
+    --cluster=kubernetes 
+    --user=kubernetes-admin
+    --kubeconfig=/etc/kubernetes/admin.conf &&
+    kubectl config use-context 
+    kubernetes-admin@kubernetes 
+    --kubeconfig=/etc/kubernetes/admin.conf
+
+- name: create controller-manager.conf 
+  shell: >
+    cd /etc/kubernetes/pki/ &&
+    kubectl config set-cluster kubernetes 
+    --certificate-authority=ca.crt 
+    --embed-certs=true 
+    --server=https://{{ ansible_host | trim }}:{{ kube_apiserver_port | trim }} 
+    --kubeconfig=/etc/kubernetes/controller-manager.conf &&
+    kubectl config set-credentials system:kube-controller-manager 
+    --client-certificate=kube-controller-manager.crt 
+    --client-key=sa.key 
+    --embed-certs=true 
+    --kubeconfig=/etc/kubernetes/controller-manager.conf &&
+    kubectl config set-context system:kube-controller-manager@kubernetes 
+    --cluster=kubernetes 
+    --user=system:kube-controller-manager 
+    --kubeconfig=/etc/kubernetes/controller-manager.conf &&
+    kubectl config use-context system:kube-controller-manager@kubernetes 
+    --kubeconfig=/etc/kubernetes/controller-manager.conf
+
+- name: create scheduler.conf 
+  shell: >
+    cd /etc/kubernetes/pki/ &&
+    kubectl config set-cluster kubernetes 
+    --certificate-authority=ca.crt 
+    --embed-certs=true 
+    --server=https://{{ ansible_host | trim }}:{{ kube_apiserver_port | trim }} 
+    --kubeconfig=/etc/kubernetes/scheduler.conf &&
+    kubectl config set-credentials system:kube-scheduler 
+    --client-certificate=kube-scheduler.crt
+    --client-key=kube-scheduler.key 
+    --embed-certs=true 
+    --kubeconfig=/etc/kubernetes/scheduler.conf &&
+    kubectl config set-context system:kube-scheduler@kubernetes 
+    --cluster=kubernetes 
+    --user=system:kube-scheduler 
+    --kubeconfig=/etc/kubernetes/scheduler.conf &&
+    kubectl config use-context system:kube-scheduler@kubernetes 
+    --kubeconfig=/etc/kubernetes/scheduler.conf
+
+- name: create kubelet.conf 
+  shell: >
+    cd /etc/kubernetes/pki/ &&
+    kubectl config set-cluster kubernetes 
+    --certificate-authority=ca.crt 
+    --embed-certs=true 
+    --server=https://{{ ansible_host | trim }}:{{ kube_apiserver_port | trim }} 
+    --kubeconfig=/etc/kubernetes/kubelet.conf &&
+    kubectl config set-credentials system:node:{{ inventory_hostname }} 
+    --client-certificate=apiserver-kubelet-client.crt 
+    --client-key=apiserver-kubelet-client.key 
+    --embed-certs=true 
+    --kubeconfig=/etc/kubernetes/kubelet.conf &&
+    kubectl config set-context system:node:{{ inventory_hostname }}@kubernetes 
+    --cluster=kubernetes --user=system:node:{{ inventory_hostname }} 
+    --kubeconfig=/etc/kubernetes/kubelet.conf &&
+    kubectl config use-context system:node:{{ inventory_hostname }}@kubernetes 
+    --kubeconfig=/etc/kubernetes/kubelet.conf
+
+- name: restart kubelet
+  command: /bin/true
+  notify: Master | restart kubelet

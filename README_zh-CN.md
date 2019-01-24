@@ -5,15 +5,10 @@
 在要执行ansible脚本的机器上安装ansible运行需要的环境：
 
 ```
-# 安装 epel 源并更新
-sudo yum install epel-release -y && sudo yum update -y
-# 安装python
-sudo yum install git python sshpass python-pip -y
-# pip安装ansible(国内如果安装太慢可以直接用pip阿里云加速)
-# sudo pip install pip --upgrade
-# sudo pip install ansible==2.7.5 netaddr
-sudo pip install pip --upgrade -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
-sudo pip install --no-cache-dir ansible==2.7.5 netaddr -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
+sudo yum install epel-release -y 
+sudo yum install git python36 sshpass -y
+sudo python3.6 -m ensurepip
+sudo /usr/local/bin/pip3 install --no-cache-dir ansible==2.7.5 netaddr -i https://mirrors.aliyun.com/pypi/simple/
 ```
 
 克隆项目：

@@ -45,39 +45,6 @@
   failed_when: kubeadm_init.rc != 0 and "field is immutable" not in kubeadm_init.stderr
   notify: Master | restart kubelet
 
-- name: slurp kubeadm certs
-  slurp:
-    src: "{{ item }}"
-  with_items:
-    - "/etc/kubernetes/pki/apiserver.crt"
-    - "/etc/kubernetes/pki/apiserver.key"
-    - "/etc/kubernetes/pki/apiserver-kubelet-client.crt"
-    - "/etc/kubernetes/pki/apiserver-kubelet-client.key"
-    - "/etc/kubernetes/pki/ca.crt"
-    - "/etc/kubernetes/pki/ca.key"
-    - "/etc/kubernetes/pki/front-proxy-ca.crt"
-    - "/etc/kubernetes/pki/front-proxy-ca.key"
-    - "/etc/kubernetes/pki/front-proxy-client.crt"
-    - "/etc/kubernetes/pki/front-proxy-client.key"
-    - "/etc/kubernetes/pki/sa.key"
-    - "/etc/kubernetes/pki/sa.pub"
-  register: kubeadm_certs
-  delegate_to: "{{ groups['kube-master']|first }}"
-  when: (groups['kube-master'] | length)!=1
-  run_once: true
-
-- name: kubeadm | write out kubeadm certs
-  copy:
-    dest: "{{ item.item }}"
-    content: "{{ item.content | b64decode }}"
-    owner: root
-    group: root
-    mode: 0700
-  no_log: true
-  register: copy_kubeadm_certs
-  with_items: "{{ kubeadm_certs.results }}"
-  when: inventory_hostname != groups['kube-master']|first
-
 - name: kubeadm | Init other uninitialized masters
   environment:
     - KUBE_REPO_PREFIX: "{{kube_image_repo}}"
@@ -89,7 +56,6 @@
   when: inventory_hostname != groups['kube-master']|first and not kubeadm_ca.stat.exists
   failed_when: kubeadm_init.rc != 0 and "field is immutable" not in kubeadm_init.stderr
   notify: Master | restart kubelet
-
 
 - name: kubeadm | Create kubedns service config
   template:
