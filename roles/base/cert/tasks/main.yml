@@ -1,0 +1,25 @@
+---
+- name: generate k8s certs
+  include: gen-master-certs.yml
+
+- name: Include config certs
+  include: configfile.yml
+
+- name: reload kubelet
+  service:
+    name: kubelet
+    state: restarted
+
+- name: Create kube config dir
+  file:
+    path: "/root/.kube"
+    mode: "0700"
+    state: directory
+
+- name: Copy admin kubeconfig to root user home
+  copy:
+    src: "/etc/kubernetes/admin.conf"
+    dest: "/root/.kube/config"
+    remote_src: yes
+    mode: "0700"
+    backup: yes
