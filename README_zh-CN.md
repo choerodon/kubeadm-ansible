@@ -419,3 +419,11 @@ spec:
       options:
         diskId: "d-1ierokwer8234jowe"
 ```
+
+## 8. 刷新集群证书
+
+> 刷新证书的前提需要保证CA根证书存在，证书刷新后会重启master节点 kubelet 以应用新的证书，届时可能导致1-2分钟无法操作集群，但业务应用是不受影响的。
+
+```
+ansible-playbook -i inventory/hosts -e @inventory/vars renew-certs.yml
+```
