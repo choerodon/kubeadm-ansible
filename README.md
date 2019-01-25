@@ -436,3 +436,11 @@ Pull requests are welcome! Follow [this link](https://github.com/choerodon/choer
 - **There are certain risks in cluster update. Please be cautious.**
 - Use command upgrade to 1.9.9 version：`ansible-playbook -i inventory/hosts 1.8.5-upgrade-to-1.9.9.yml`
 - Use command upgrade to 1.10.12 version：`ansible-playbook -i inventory/hosts 1.9.9-upgrade-to-1.10.12.yml`
+
+## 9. Refresh cluster certificate
+
+> The prerequisite for refreshing the certificate is to ensure that the CA root certificate exists. After the certificate is refreshed, the master node kubelet is restarted to apply the new certificate. At this time, the cluster may not be operated for 1-2 minutes, but the business application is not affected.
+
+```
+ansible-playbook -i inventory/hosts -e @inventory/vars renew-certs.yml
+```
