@@ -70,15 +70,15 @@
       -extfile kube-openssl.cnf 
       -out apiserver-kubelet-client.crt
 
-  - name: 创建 sa 证书私钥
-    shell: >
-      cd /etc/kubernetes/pki/ &&
-      openssl genrsa -out sa.key 2048
+  # - name: 创建 sa 证书私钥
+  #   shell: >
+  #     cd /etc/kubernetes/pki/ &&
+  #     openssl genrsa -out sa.key 2048
 
-  - name: 根据 sa 私钥创建公钥
-    shell: >
-      cd /etc/kubernetes/pki/ &&
-      openssl rsa -in sa.key -pubout -out sa.pub
+  # - name: 根据 sa 私钥创建公钥
+  #   shell: >
+  #     cd /etc/kubernetes/pki/ &&
+  #     openssl rsa -in sa.key -pubout -out sa.pub
 
   - name: 软链 sa 证书私钥为 kube-controller-manager 证书私钥
     file: 
