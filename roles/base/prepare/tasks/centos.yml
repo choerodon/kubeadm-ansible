@@ -87,6 +87,15 @@
     - net.bridge.bridge-nf-call-arptables
     - net.bridge.bridge-nf-call-ip6tables
 
+- name: Ensure sysctl config
+  template: 
+    src: 95-k8s-sysctl.conf.j2 
+    dest: /etc/sysctl.d/95-k8s-sysctl.conf
+
+- name: sysctl set net
+  shell: "sysctl -p /etc/sysctl.d/95-k8s-sysctl.conf"
+  ignore_errors: true
+
 # - name: Ensure firewalld.service
 #   service: name=firewalld state=stopped enabled=no
 #   ignore_errors: yes
