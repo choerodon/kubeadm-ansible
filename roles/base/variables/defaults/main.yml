@@ -116,7 +116,7 @@ ingress_nginx_enable: true
 
 heapster_enable: true
 
-kube_lego_enable: true
+kube_lego_enable: false
 
 # ================================= docker参数 =================================
 
