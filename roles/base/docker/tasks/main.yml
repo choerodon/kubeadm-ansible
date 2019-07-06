@@ -18,6 +18,10 @@
 
 - name: Ensure docker-ce repo
   command: yum-config-manager --add-repo {{aliyun_docker_yum_repo}} && yum makecache fast
+  environment:
+    http_proxy: "{{ http_proxy| default ('') }}"
+    https_proxy: "{{ https_proxy| default ('') }}"
+    no_proxy: "{{ no_proxy| default ('') }}"
   tags:
   - docker
 
