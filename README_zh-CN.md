@@ -1,3 +1,6 @@
+|![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/156px-Warning.svg.png) | 此仓库已停止更新，没有计划支持任何新功能。新的项目地址为 [open-hand/kubeadm-ha](https://github.com/open-hand/kubeadm-ha)
+|---|---|
+
 ## 1. 环境准备
 
 > 注意：目前只支持centos 7.2+

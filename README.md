@@ -1,3 +1,6 @@
+|![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Warning.svg/156px-Warning.svg.png) | This project is no longer supported,There is no plan to support any new features.The successor is [open-hand/kubeadm-ha](https://github.com/open-hand/kubeadm-ha)
+|---|---|
+
 # Kubeadmin Ansible [中文](README_zh-CN.md)
 
 Kubeadmin ansible is a toolkit for simple and quick installing k8s cluster. 
